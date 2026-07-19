@@ -1,0 +1,2 @@
+-- Placeholder for separately created indexes.
+-- Standard indexes are currently defined inline in the table CREATE TABLE statements.
