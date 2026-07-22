@@ -364,6 +364,7 @@ public final class SettlementService {
     //  Internal cache-update descriptor (avoids mid-commit cache writes)//
     // ------------------------------------------------------------------ //
 
+    @SuppressWarnings("unused")
     private static final class CacheUpdate {
         final Trade       trade;
         final Order       buyOrder;

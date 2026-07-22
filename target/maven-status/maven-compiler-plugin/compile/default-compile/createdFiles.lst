@@ -1,5 +1,6 @@
 com\bank\trading\dao\impl\InstrumentDaoImpl.class
 com\bank\trading\service\SettlementService.class
+com\bank\trading\service\TraderService.class
 com\bank\trading\util\MatchResult.class
 com\bank\trading\service\CancelOrderService.class
 com\bank\trading\config\DatabaseConfig.class
@@ -21,17 +22,22 @@ com\bank\trading\dao\impl\HoldingDaoImpl.class
 com\bank\trading\service\MatchingEngine.class
 com\bank\trading\dao\impl\UserDaoImpl.class
 com\bank\trading\dao\InstrumentDao.class
+com\bank\trading\model\Permission.class
 com\bank\trading\dao\WalletDao.class
 com\bank\trading\model\Client.class
 com\bank\trading\model\InstrumentType.class
 com\bank\trading\service\SettlementService$CacheUpdate.class
 com\bank\trading\model\Role.class
 com\bank\trading\engine\PriceLevel.class
+com\bank\trading\dao\TraderProfileDao.class
 com\bank\trading\model\Trade.class
 com\bank\trading\service\RiskValidationService.class
+com\bank\trading\service\ClientService.class
 com\bank\trading\dao\impl\TraderAssignmentDaoImpl.class
 com\bank\trading\dao\HoldingTransactionDao.class
+com\bank\trading\dao\impl\ClientProfileDaoImpl.class
 com\bank\trading\model\OrderEventType.class
+com\bank\trading\service\AdminService.class
 com\bank\trading\dao\impl\WalletDaoImpl.class
 com\bank\trading\engine\OrderNode.class
 com\bank\trading\model\Wallet.class
@@ -39,8 +45,10 @@ com\bank\trading\model\Instrument.class
 com\bank\trading\service\ExpiryService.class
 com\bank\trading\dao\impl\OrderDaoImpl.class
 com\bank\trading\service\TradingService.class
+com\bank\trading\dao\impl\TraderProfileDaoImpl.class
 com\bank\trading\model\OrderEvent.class
 com\bank\trading\model\Side.class
+com\bank\trading\dao\ClientProfileDao.class
 com\bank\trading\TestApplication.class
 com\bank\trading\cache\CacheManager.class
 com\bank\trading\engine\DoublyLinkedList.class
@@ -52,6 +60,7 @@ com\bank\trading\model\WalletTxType.class
 com\bank\trading\dao\AuditLogDao.class
 com\bank\trading\util\OrderPlacementResult.class
 com\bank\trading\dao\impl\HoldingTransactionDaoImpl.class
+com\bank\trading\AutomatedTests.class
 com\bank\trading\dao\impl\TradeDaoImpl.class
 com\bank\trading\dao\impl\OrderEventDaoImpl.class
 com\bank\trading\service\ModifyOrderService.class
@@ -59,6 +68,7 @@ com\bank\trading\model\TimeInForce.class
 com\bank\trading\model\Holding.class
 com\bank\trading\dao\impl\WalletTransactionDaoImpl.class
 com\bank\trading\dao\OrderDao.class
+com\bank\trading\service\RBACService.class
 com\bank\trading\model\ActionType.class
 com\bank\trading\dao\UserDao.class
 com\bank\trading\engine\OrderBook.class

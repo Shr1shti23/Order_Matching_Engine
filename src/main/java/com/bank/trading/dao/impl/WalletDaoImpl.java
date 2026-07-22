@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,6 +59,24 @@ public class WalletDaoImpl implements WalletDao {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected == 0) {
                 throw new SQLException("Optimistic lock failure on wallet " + walletId);
+            }
+        }
+    }
+
+    @Override
+    public void save(Wallet wallet, Connection conn) throws SQLException {
+        String sql = "INSERT INTO wallets (client_id, cash_balance, reserved_balance, currency, version) " +
+                     "VALUES (?, ?, ?, ?, 0)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setLong(1, wallet.getClientId());
+            stmt.setBigDecimal(2, wallet.getCashBalance());
+            stmt.setBigDecimal(3, wallet.getReservedBalance() != null ? wallet.getReservedBalance() : BigDecimal.ZERO);
+            stmt.setString(4, wallet.getCurrency());
+            stmt.executeUpdate();
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    wallet.setWalletId(rs.getLong(1));
+                }
             }
         }
     }

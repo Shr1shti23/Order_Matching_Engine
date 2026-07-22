@@ -28,6 +28,7 @@ public class AutomatedTests {
             SettlementService settlementService = new SettlementService(cache, reservationService, orderBookService);
             RiskValidationService riskValidationService = new RiskValidationService(cache);
             CancelOrderService cancelOrderService = new CancelOrderService(cache, reservationService, orderBookService);
+            @SuppressWarnings("unused")
             ExpiryService expiryService = new ExpiryService(cache, cancelOrderService);
             TradingService tradingService = new TradingService(cache, riskValidationService, reservationService, matchingEngine, settlementService, orderBookService, cancelOrderService);
             ModifyOrderService modifyOrderService = new ModifyOrderService(cache, tradingService, cancelOrderService, reservationService);

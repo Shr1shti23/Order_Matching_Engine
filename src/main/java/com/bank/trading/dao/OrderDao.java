@@ -10,4 +10,6 @@ public interface OrderDao {
     List<Order> findOpenOrders();
     long insert(Order order, Connection conn) throws SQLException;
     void updateStatus(long orderId, OrderStatus newStatus, long remainingQty, Connection conn) throws SQLException;
+    List<Order> findAll();
+    List<Order> findByClientId(long clientId);
 }

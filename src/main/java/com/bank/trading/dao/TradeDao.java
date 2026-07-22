@@ -8,4 +8,6 @@ import java.util.List;
 public interface TradeDao {
     long insert(Trade trade, Connection conn) throws SQLException;
     List<Trade> findRecentByInstrument(int instrumentId, int limit);
+    List<Trade> findAll();
+    List<Trade> findByClientId(long clientId);
 }

@@ -96,13 +96,12 @@ public final class CancelOrderService {
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                OrderStatus newStatus = (order.getStatus() == OrderStatus.PARTIALLY_FILLED)
-                    ? OrderStatus.CANCELLED : OrderStatus.CANCELLED;
+                OrderStatus newStatus = OrderStatus.CANCELLED;
 
-                orderDao.updateStatus(order.getOrderId(), OrderStatus.CANCELLED,
+                orderDao.updateStatus(order.getOrderId(), newStatus,
                     order.getRemainingQty(), conn);
 
-                insertCancelEvent(order, OrderStatus.CANCELLED, order.getTraderId(), conn);
+                insertCancelEvent(order, newStatus, order.getTraderId(), conn);
                 insertCancelAudit(order, order.getTraderId(), conn);
 
                 conn.commit();

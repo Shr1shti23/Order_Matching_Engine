@@ -76,6 +76,45 @@ public class OrderDaoImpl implements OrderDao {
         }
     }
 
+    @Override
+    public List<Order> findAll() {
+        List<Order> orders = new ArrayList<>();
+        String sql = "SELECT o.*, i.symbol FROM orders o " +
+                     "JOIN instruments i ON o.instrument_id = i.instrument_id " +
+                     "ORDER BY o.created_at DESC";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                orders.add(mapRow(rs, true));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching all orders", e);
+        }
+        return orders;
+    }
+
+    @Override
+    public List<Order> findByClientId(long clientId) {
+        List<Order> orders = new ArrayList<>();
+        String sql = "SELECT o.*, i.symbol FROM orders o " +
+                     "JOIN instruments i ON o.instrument_id = i.instrument_id " +
+                     "WHERE o.client_id = ? " +
+                     "ORDER BY o.created_at DESC";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, clientId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    orders.add(mapRow(rs, true));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching orders for client " + clientId, e);
+        }
+        return orders;
+    }
+
     private Order mapRow(ResultSet rs, boolean withSymbol) throws SQLException {
         Order order = new Order();
         order.setOrderId(rs.getLong("order_id"));

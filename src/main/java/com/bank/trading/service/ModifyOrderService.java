@@ -36,6 +36,7 @@ public final class ModifyOrderService {
     private final CacheManager       cache;
     private final TradingService     tradingService;
     private final CancelOrderService cancelOrderService;
+    @SuppressWarnings("unused")
     private final ReservationService reservationService;
 
     private final OrderDao      orderDao;

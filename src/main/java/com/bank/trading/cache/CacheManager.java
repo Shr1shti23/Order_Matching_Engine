@@ -320,4 +320,60 @@ public final class CacheManager {
     public boolean hasOpenOrder(long orderId) {
         return orderNodeMap.containsKey(orderId);
     }
+
+    // ------------------------------------------------------------------ //
+    //  Admin metadata refresh helpers                                     //
+    //  These ONLY reload admin-visible metadata (instruments, wallets,    //
+    //  holdings, assignments). They NEVER touch the order book, resting   //
+    //  order map, or matching engine caches.                              //
+    // ------------------------------------------------------------------ //
+
+    /** Reloads the instrument cache from the database. */
+    public void refreshInstruments() {
+        instrumentCache.clear();
+        List<Instrument> instruments = instrumentDao.findAll();
+        for (Instrument instrument : instruments) {
+            if (instrument.getStatus() == InstrumentStatus.ACTIVE) {
+                instrumentCache.put(instrument.getSymbol(), instrument);
+            }
+        }
+    }
+
+    /** Reloads all wallets from the database (does NOT reset reservedBalance). */
+    public void refreshWallets() {
+        List<Wallet> wallets = walletDao.findAll();
+        for (Wallet w : wallets) {
+            Wallet existing = walletCache.get(w.getClientId());
+            if (existing != null) {
+                // Preserve in-memory reserved balance — only refresh DB-backed balance
+                w.setReservedBalance(existing.getReservedBalance());
+            }
+            walletCache.put(w.getClientId(), w);
+        }
+    }
+
+    /** Reloads all holdings from the database (does NOT reset reservedQuantity). */
+    public void refreshHoldings() {
+        List<Holding> holdings = holdingDao.findAll();
+        holdingCache.clear();
+        for (Holding h : holdings) {
+            holdingCache
+                .computeIfAbsent(h.getClientId(), k -> new HashMap<>())
+                .put(h.getInstrumentId(), h);
+        }
+    }
+
+    /** Reloads trader-client assignments from the database. */
+    public void refreshTraderAssignments() {
+        traderAssignments.clear();
+        List<TraderClientAssignment> assignments = traderAssignmentDao.findAll();
+        for (TraderClientAssignment a : assignments) {
+            if (a.isActive()) {
+                traderAssignments
+                    .computeIfAbsent(a.getTraderId(), k -> new HashSet<>())
+                    .add(a.getClientId());
+            }
+        }
+    }
 }
+

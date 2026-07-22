@@ -56,6 +56,43 @@ public class TradeDaoImpl implements TradeDao {
         return trades;
     }
 
+    @Override
+    public List<Trade> findAll() {
+        List<Trade> trades = new ArrayList<>();
+        String sql = "SELECT * FROM trades ORDER BY executed_at DESC";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                trades.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching all trades", e);
+        }
+        return trades;
+    }
+
+    @Override
+    public List<Trade> findByClientId(long clientId) {
+        List<Trade> trades = new ArrayList<>();
+        String sql = "SELECT t.* FROM trades t " +
+                     "JOIN orders o ON (t.buy_order_id = o.order_id OR t.sell_order_id = o.order_id) " +
+                     "WHERE o.client_id = ? " +
+                     "ORDER BY t.executed_at DESC";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, clientId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    trades.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching trades for client " + clientId, e);
+        }
+        return trades;
+    }
+
     private Trade mapRow(ResultSet rs) throws SQLException {
         Trade trade = new Trade();
         trade.setTradeId(rs.getLong("trade_id"));
