@@ -30,7 +30,7 @@ public final class TestApplication {
 
     public static void main(String[] args) {
         System.out.println("=================================================");
-        System.out.println("     BANK TRADING PLATFORM — RBAC CONSOLE        ");
+        System.out.println("     BANK TRADING PLATFORM  RBAC CONSOLE        ");
         System.out.println("=================================================");
 
         // ------ Initialise DB connection pool ------
@@ -67,12 +67,15 @@ public final class TestApplication {
         boolean appRunning = true;
 
         while (appRunning) {
-            System.out.println("\n-------------------------------------------------");
-            System.out.println("  SYSTEM LOGIN");
-            System.out.println("-------------------------------------------------");
-            System.out.println("  1. Login");
-            System.out.println("  0. Exit System");
-            System.out.print("  Choice: ");
+            System.out.println("""
+                
+                ┌────────────────────────────────────────────────────────┐
+                │                      SYSTEM LOGIN                      │
+                ├────────────────────────────────────────────────────────┤
+                │  1  Login                                              │
+                │  0  Exit System                                        │
+                └────────────────────────────────────────────────────────┘
+                Choice: """);
 
             String choice = scanner.nextLine().trim();
             if ("0".equals(choice)) {
@@ -104,10 +107,13 @@ public final class TestApplication {
     // ================================================================== //
 
     private static User attemptLogin(Scanner scanner) {
-        System.out.print("\n  Username: ");
-        String username = scanner.nextLine().trim();
-        System.out.print("  Password: ");
-        String password = scanner.nextLine().trim();
+        System.out.println("""
+            
+            ┌────────────────────────────────────────────────────────┐
+            │                  USER AUTHENTICATION                   │
+            └────────────────────────────────────────────────────────┘""");
+        String username = promptNonEmptyString(scanner, "Username: ");
+        String password = promptNonEmptyString(scanner, "Password: ");
 
         try {
             User user = rbacService.authenticate(username, password);
@@ -135,11 +141,11 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │               ADMINISTRATION MAIN MENU                 │
+                │                ADMINISTRATION MAIN MENU                │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Trader Management                                  │
                 │  2  Client Management                                  │
-                │  3  Trader-Client Assignments                              │
+                │  3  Trader-Client Assignments                          │
                 │  4  Instrument Management                              │
                 │  5  System Monitoring & Expiry                         │
                 │  0  Logout                                             │
@@ -166,13 +172,14 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                  TRADER MANAGEMENT                     │
+                │                   TRADER MANAGEMENT                    │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Create Trader                                      │
                 │  2  Suspend Trader                                     │
                 │  3  Activate Trader                                    │
                 │  4  Delete Trader                                      │
                 │  5  List All Traders                                   │
+                │  6  Find Trader ID by Name & Aadhaar (Last 4 Digits)   │
                 │  0  Back to Admin Main Menu                            │
                 └────────────────────────────────────────────────────────┘
                 Choice: """);
@@ -184,6 +191,7 @@ public final class TestApplication {
                 case "3" -> adminActivateTrader(sc, admin);
                 case "4" -> adminDeleteTrader(sc, admin);
                 case "5" -> adminListTraders();
+                case "6" -> adminFindTraderId(sc);
                 case "0" -> inMenu = false;
                 default  -> System.out.println("  Invalid choice.");
             }
@@ -197,13 +205,15 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                  CLIENT MANAGEMENT                     │
+                │                   CLIENT MANAGEMENT                    │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Create Client                                      │
                 │  2  Update Client Profile                              │
                 │  3  Delete Client                                      │
                 │  4  List All Clients                                   │
                 │  5  Initialize Client Portfolio                        │
+                │  6  Deposit / Add Funds to Client Wallet               │
+                │  7  Find Client ID by Name & Aadhaar (Last 4 Digits)   │
                 │  0  Back to Admin Main Menu                            │
                 └────────────────────────────────────────────────────────┘
                 Choice: """);
@@ -215,6 +225,8 @@ public final class TestApplication {
                 case "3" -> adminDeleteClient(sc, admin);
                 case "4" -> adminListClients();
                 case "5" -> adminInitHolding(sc, admin);
+                case "6" -> adminDepositWallet(sc);
+                case "7" -> adminFindClientId(sc);
                 case "0" -> inMenu = false;
                 default  -> System.out.println("  Invalid choice.");
             }
@@ -228,12 +240,11 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │             TRADER-CLIENT ASSIGNMENTS                  │
+                │               TRADER-CLIENT ASSIGNMENTS                │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Assign Client to Trader                            │
-                │  2  Reassign Client to New Trader                      │
-                │  3  Remove Assignment                                  │
-                │  4  List All Assignments                               │
+                │  2  Remove Assignment                                  │
+                │  3  List All Assignments                               │
                 │  0  Back to Admin Main Menu                            │
                 └────────────────────────────────────────────────────────┘
                 Choice: """);
@@ -241,9 +252,8 @@ public final class TestApplication {
             String input = sc.nextLine().trim();
             switch (input) {
                 case "1" -> adminAssignClient(sc, admin);
-                case "2" -> adminReassignClient(sc, admin);
-                case "3" -> adminRemoveAssignment(sc);
-                case "4" -> adminListAssignments();
+                case "2" -> adminRemoveAssignment(sc);
+                case "3" -> adminListAssignments();
                 case "0" -> inMenu = false;
                 default  -> System.out.println("  Invalid choice.");
             }
@@ -257,7 +267,7 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                INSTRUMENT MANAGEMENT                   │
+                │                 INSTRUMENT MANAGEMENT                  │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Register New Instrument                            │
                 │  2  Update Instrument                                  │
@@ -288,7 +298,7 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │             SYSTEM MONITORING & EXPIRY                 │
+                │               SYSTEM MONITORING & EXPIRY               │
                 ├────────────────────────────────────────────────────────┤
                 │  1  View Live Order Book                               │
                 │  2  View All Orders (Database)                         │
@@ -320,21 +330,38 @@ public final class TestApplication {
 
     private static void adminCreateTrader(Scanner sc, User admin) {
         System.out.println("\n-- Create Trader --");
-        String username = prompt(sc, "Username: ").trim();
-        String email    = prompt(sc, "Email: ").trim();
-        String password = prompt(sc, "Password: ").trim();
-        String empCode  = prompt(sc, "Employee Code: ").trim();
-        String dept     = prompt(sc, "Department: ").trim();
+        String username = promptNonEmptyString(sc, "Username: ");
+        String email    = promptEmail(sc, "Email: ");
+        String password = promptNonEmptyString(sc, "Password: ");
+        String empCode  = promptNonEmptyString(sc, "Employee Code: ");
+        String dept     = promptNonEmptyString(sc, "Department: ");
+        String aadhaar  = promptAadhaarLast4(sc, "Aadhaar Card (Last 4 Digits): ");
         try {
-            User u = adminService.createTrader(username, email, password, empCode, dept, admin.getUserId());
+            User u = adminService.createTrader(username, email, password, empCode, dept, aadhaar, admin.getUserId());
             System.out.println("  [OK] Created Trader user ID: " + u.getUserId());
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
         }
     }
 
+    private static void adminFindTraderId(Scanner sc) {
+        System.out.println("\n-- Find Trader ID --");
+        String username = promptNonEmptyString(sc, "Trader Username / Name: ");
+        String aadhaar  = promptAadhaarLast4(sc, "Aadhaar Card (Last 4 Digits): ");
+        try {
+            Optional<Long> optId = adminService.findTraderIdByNameAndAadhaar(username, aadhaar);
+            if (optId.isPresent()) {
+                System.out.println("  [OK] Found Trader User ID: " + optId.get());
+            } else {
+                System.out.println("  [FAIL] No trader found matching Username '" + username + "' and Aadhaar last 4 digits '" + aadhaar + "'.");
+            }
+        } catch (Exception e) {
+            System.out.println("  [FAIL] " + e.getMessage());
+        }
+    }
+
     private static void adminSuspendTrader(Scanner sc, User admin) {
-        long id = promptLong(sc, "Trader User ID to Suspend: ");
+        long id = promptPositiveLong(sc, "Trader User ID to Suspend: ");
         try {
             adminService.suspendTrader(id, admin.getUserId());
             System.out.println("  [OK] Trader suspended.");
@@ -344,7 +371,7 @@ public final class TestApplication {
     }
 
     private static void adminActivateTrader(Scanner sc, User admin) {
-        long id = promptLong(sc, "Trader User ID to Activate: ");
+        long id = promptPositiveLong(sc, "Trader User ID to Activate: ");
         try {
             adminService.activateTrader(id, admin.getUserId());
             System.out.println("  [OK] Trader activated.");
@@ -354,7 +381,7 @@ public final class TestApplication {
     }
 
     private static void adminDeleteTrader(Scanner sc, User admin) {
-        long id = promptLong(sc, "Trader User ID to Delete: ");
+        long id = promptPositiveLong(sc, "Trader User ID to Delete: ");
         try {
             adminService.deleteTrader(id, admin.getUserId());
             System.out.println("  [OK] Trader marked DELETED.");
@@ -374,26 +401,55 @@ public final class TestApplication {
 
     private static void adminCreateClient(Scanner sc, User admin) {
         System.out.println("\n-- Create Client --");
-        String username = prompt(sc, "Username: ").trim();
-        String email    = prompt(sc, "Email: ").trim();
-        String password = prompt(sc, "Password: ").trim();
+        String username = promptNonEmptyString(sc, "Username: ");
+        String email    = promptEmail(sc, "Email: ");
+        String password = promptNonEmptyString(sc, "Password: ");
         String kyc      = promptChoice(sc, "KYC Status [VERIFIED/PENDING/REJECTED]: ", "VERIFIED", "PENDING", "REJECTED");
-        String risk     = promptChoice(sc, "Risk Profile [CONSERVATIVE/MODERATE/AGGRESSIVE]: ", "MODERATE", "CONSERVATIVE", "AGGRESSIVE");
-        BigDecimal bal  = promptDecimal(sc, "Initial Wallet Balance: ");
-        String curr     = prompt(sc, "Currency [INR/USD]: ").trim().toUpperCase();
+        String riskInput = promptChoice(sc, "Risk Profile [LOW/MEDIUM/HIGH]: ", "MEDIUM", "LOW", "HIGH", "CONSERVATIVE", "MODERATE", "AGGRESSIVE");
+        String risk = switch (riskInput.toUpperCase()) {
+            case "CONSERVATIVE" -> "LOW";
+            case "MODERATE" -> "MEDIUM";
+            case "AGGRESSIVE" -> "HIGH";
+            default -> riskInput.toUpperCase();
+        };
+        BigDecimal bal  = promptNonNegativeDecimal(sc, "Initial Wallet Balance: ");
+        String curr     = promptChoice(sc, "Currency [INR/USD]: ", "INR", "USD");
+        String aadhaar  = promptAadhaarLast4(sc, "Aadhaar Card (Last 4 Digits): ");
 
         try {
-            User u = adminService.createClient(username, email, password, kyc, risk, bal, curr.isEmpty() ? "INR" : curr, admin.getUserId());
+            User u = adminService.createClient(username, email, password, kyc, risk, bal, curr.isEmpty() ? "INR" : curr, aadhaar, admin.getUserId());
             System.out.println("  [OK] Created Client user ID: " + u.getUserId());
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
         }
     }
 
+    private static void adminFindClientId(Scanner sc) {
+        System.out.println("\n-- Find Client ID --");
+        String username = promptNonEmptyString(sc, "Client Username / Name: ");
+        String aadhaar  = promptAadhaarLast4(sc, "Aadhaar Card (Last 4 Digits): ");
+        try {
+            Optional<Long> optId = adminService.findClientIdByNameAndAadhaar(username, aadhaar);
+            if (optId.isPresent()) {
+                System.out.println("  [OK] Found Client User ID: " + optId.get());
+            } else {
+                System.out.println("  [FAIL] No client found matching Username '" + username + "' and Aadhaar last 4 digits '" + aadhaar + "'.");
+            }
+        } catch (Exception e) {
+            System.out.println("  [FAIL] " + e.getMessage());
+        }
+    }
+
     private static void adminUpdateClient(Scanner sc) {
-        long id     = promptLong(sc, "Client User ID: ");
+        long id     = promptPositiveLong(sc, "Client User ID: ");
         String kyc  = promptChoice(sc, "KYC Status [VERIFIED/PENDING/REJECTED]: ", "VERIFIED", "PENDING", "REJECTED");
-        String risk = promptChoice(sc, "Risk Profile [CONSERVATIVE/MODERATE/AGGRESSIVE]: ", "MODERATE", "CONSERVATIVE", "AGGRESSIVE");
+        String riskInput = promptChoice(sc, "Risk Profile [LOW/MEDIUM/HIGH]: ", "MEDIUM", "LOW", "HIGH", "CONSERVATIVE", "MODERATE", "AGGRESSIVE");
+        String risk = switch (riskInput.toUpperCase()) {
+            case "CONSERVATIVE" -> "LOW";
+            case "MODERATE" -> "MEDIUM";
+            case "AGGRESSIVE" -> "HIGH";
+            default -> riskInput.toUpperCase();
+        };
         try {
             adminService.updateClient(id, kyc, risk);
             System.out.println("  [OK] Client updated.");
@@ -402,8 +458,21 @@ public final class TestApplication {
         }
     }
 
+    private static void adminDepositWallet(Scanner sc) {
+        System.out.println("\n-- Deposit / Add Funds to Client Wallet --");
+        long clientId     = promptPositiveLong(sc, "Client User ID: ");
+        BigDecimal amount = promptPositiveDecimal(sc, "Deposit Amount: ");
+        String ref        = prompt(sc, "Reference / Note (optional): ").trim();
+        try {
+            adminService.depositClientWallet(clientId, amount, ref.isEmpty() ? "ADMIN_DEPOSIT" : ref);
+            System.out.println("  [OK] Successfully deposited " + amount + " to Client " + clientId + "'s wallet.");
+        } catch (Exception e) {
+            System.out.println("  [FAIL] " + e.getMessage());
+        }
+    }
+
     private static void adminDeleteClient(Scanner sc, User admin) {
-        long id = promptLong(sc, "Client User ID to Delete: ");
+        long id = promptPositiveLong(sc, "Client User ID to Delete: ");
         try {
             adminService.deleteClient(id, admin.getUserId());
             System.out.println("  [OK] Client marked DELETED.");
@@ -421,19 +490,31 @@ public final class TestApplication {
         }
     }
 
+    private static InstrumentType parseInstrumentType(String input) {
+        if (input == null) return InstrumentType.STOCK;
+        String s = input.trim().toUpperCase();
+        return switch (s) {
+            case "EQUITY", "STOCK"   -> InstrumentType.STOCK;
+            case "BOND"              -> InstrumentType.BOND;
+            case "DERIVATIVE", "ETF" -> InstrumentType.ETF;
+            case "FOREX"             -> InstrumentType.FOREX;
+            default                  -> InstrumentType.STOCK;
+        };
+    }
+
     private static void adminInitHolding(Scanner sc, User admin) {
         System.out.println("\n-- Initialize Client Holding --");
-        long clientId     = promptLong(sc, "Client ID: ");
-        String symbol     = prompt(sc, "Symbol (e.g. AAPL): ").trim().toUpperCase();
-        String instName   = prompt(sc, "Instrument Name: ").trim();
-        String typeName   = promptChoice(sc, "Instrument Type [EQUITY/BOND/DERIVATIVE]: ", "EQUITY", "BOND", "DERIVATIVE");
-        BigDecimal tick   = promptDecimal(sc, "Tick Size: ");
-        long lot          = promptLong(sc, "Lot Size: ");
-        long qty          = promptLong(sc, "Quantity: ");
-        BigDecimal price  = promptDecimal(sc, "Avg Buy Price: ");
+        long clientId     = promptPositiveLong(sc, "Client ID: ");
+        String symbol     = promptNonEmptyString(sc, "Symbol (e.g. AAPL): ").toUpperCase();
+        String instName   = promptNonEmptyString(sc, "Instrument Name: ");
+        String typeName   = promptChoice(sc, "Instrument Type [STOCK/BOND/ETF/FOREX]: ", "STOCK", "BOND", "ETF", "FOREX", "EQUITY", "DERIVATIVE");
+        BigDecimal tick   = promptPositiveDecimal(sc, "Tick Size: ");
+        long lot          = promptPositiveLong(sc, "Lot Size: ");
+        long qty          = promptPositiveLong(sc, "Quantity: ");
+        BigDecimal price  = promptPositiveDecimal(sc, "Avg Buy Price: ");
 
         try {
-            adminService.initializeHolding(clientId, symbol, instName, InstrumentType.valueOf(typeName), tick, (int) lot, qty, price, admin.getUserId());
+            adminService.initializeHolding(clientId, symbol, instName, parseInstrumentType(typeName), tick, (int) lot, qty, price, admin.getUserId());
             System.out.println("  [OK] Initialized holding for client " + clientId);
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
@@ -446,18 +527,6 @@ public final class TestApplication {
         try {
             adminService.assignClientToTrader(traderId, clientId, admin.getUserId());
             System.out.println("  [OK] Assigned client " + clientId + " to trader " + traderId);
-        } catch (Exception e) {
-            System.out.println("  [FAIL] " + e.getMessage());
-        }
-    }
-
-    private static void adminReassignClient(Scanner sc, User admin) {
-        long oldId    = promptLong(sc, "Old Trader ID: ");
-        long newId    = promptLong(sc, "New Trader ID: ");
-        long clientId = promptLong(sc, "Client ID: ");
-        try {
-            adminService.reassignClient(oldId, newId, clientId, admin.getUserId());
-            System.out.println("  [OK] Reassigned client " + clientId + " from trader " + oldId + " to " + newId);
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
         }
@@ -485,13 +554,13 @@ public final class TestApplication {
 
     private static void adminRegisterInstrument(Scanner sc, User admin) {
         System.out.println("\n-- Register Instrument --");
-        String symbol   = prompt(sc, "Symbol: ").trim().toUpperCase();
-        String name     = prompt(sc, "Name: ").trim();
-        String typeName = promptChoice(sc, "Type [EQUITY/BOND/DERIVATIVE]: ", "EQUITY", "BOND", "DERIVATIVE");
-        BigDecimal tick = promptDecimal(sc, "Tick Size: ");
-        long lot        = promptLong(sc, "Lot Size: ");
+        String symbol   = promptNonEmptyString(sc, "Symbol: ").toUpperCase();
+        String name     = promptNonEmptyString(sc, "Name: ");
+        String typeName = promptChoice(sc, "Type [STOCK/BOND/ETF/FOREX]: ", "STOCK", "BOND", "ETF", "FOREX", "EQUITY", "DERIVATIVE");
+        BigDecimal tick = promptPositiveDecimal(sc, "Tick Size: ");
+        long lot        = promptPositiveLong(sc, "Lot Size: ");
         try {
-            Instrument i = adminService.registerInstrument(symbol, name, InstrumentType.valueOf(typeName), tick, (int) lot, admin.getUserId());
+            Instrument i = adminService.registerInstrument(symbol, name, parseInstrumentType(typeName), tick, (int) lot, admin.getUserId());
             System.out.println("  [OK] Registered instrument ID: " + i.getInstrumentId());
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
@@ -499,13 +568,13 @@ public final class TestApplication {
     }
 
     private static void adminUpdateInstrument(Scanner sc) {
-        int id          = (int) promptLong(sc, "Instrument ID: ");
-        String name     = prompt(sc, "New Name: ").trim();
-        String typeName = promptChoice(sc, "New Type [EQUITY/BOND/DERIVATIVE]: ", "EQUITY", "BOND", "DERIVATIVE");
-        BigDecimal tick = promptDecimal(sc, "New Tick Size: ");
-        long lot        = promptLong(sc, "New Lot Size: ");
+        int id          = (int) promptPositiveLong(sc, "Instrument ID: ");
+        String name     = promptNonEmptyString(sc, "New Name: ");
+        String typeName = promptChoice(sc, "New Type [STOCK/BOND/ETF/FOREX]: ", "STOCK", "BOND", "ETF", "FOREX", "EQUITY", "DERIVATIVE");
+        BigDecimal tick = promptPositiveDecimal(sc, "New Tick Size: ");
+        long lot        = promptPositiveLong(sc, "New Lot Size: ");
         try {
-            adminService.updateInstrument(id, name, InstrumentType.valueOf(typeName), tick, (int) lot);
+            adminService.updateInstrument(id, name, parseInstrumentType(typeName), tick, (int) lot);
             System.out.println("  [OK] Instrument updated.");
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
@@ -513,7 +582,7 @@ public final class TestApplication {
     }
 
     private static void adminActivateInstrument(Scanner sc) {
-        int id = (int) promptLong(sc, "Instrument ID: ");
+        int id = (int) promptPositiveLong(sc, "Instrument ID: ");
         try {
             adminService.activateInstrument(id);
             System.out.println("  [OK] Instrument activated.");
@@ -523,7 +592,7 @@ public final class TestApplication {
     }
 
     private static void adminDeactivateInstrument(Scanner sc) {
-        int id = (int) promptLong(sc, "Instrument ID: ");
+        int id = (int) promptPositiveLong(sc, "Instrument ID: ");
         try {
             adminService.deactivateInstrument(id);
             System.out.println("  [OK] Instrument deactivated.");
@@ -560,8 +629,7 @@ public final class TestApplication {
     }
 
     private static void adminViewAuditLogs(Scanner sc) {
-        long limit = promptLong(sc, "Limit [default 20]: ");
-        int lim = limit <= 0 ? 20 : (int) limit;
+        int lim = promptOptionalInt(sc, "Limit [default 20]: ", 20);
         System.out.println("\n-- Audit Logs (Last " + lim + ") --");
         List<AuditLog> list = adminService.viewAuditLogs(lim);
         System.out.printf("  %-10s %-12s %-18s %-12s %-10s %-30s%n", "AuditID", "ActorUserID", "ActionType", "EntityType", "EntityID", "Details");
@@ -588,10 +656,11 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                   TRADER MAIN MENU                     │
+                │                    TRADER MAIN MENU                    │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Order Operations                                   │
                 │  2  Assigned Clients Management                        │
+                │  3  View My Assigned Clients                           │
                 │  0  Logout                                             │
                 └────────────────────────────────────────────────────────┘
                 Choice: """);
@@ -600,8 +669,9 @@ public final class TestApplication {
             switch (input) {
                 case "1" -> runTraderOrderOperationsMenu(sc, trader);
                 case "2" -> runTraderClientManagementMenu(sc, trader);
+                case "3" -> traderViewAssignedClients(trader);
                 case "0" -> inSession = false;
-                default  -> System.out.println("  Invalid choice. Please select 0-2.");
+                default  -> System.out.println("  Invalid choice. Please select 0-3.");
             }
         }
     }
@@ -612,7 +682,7 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                   ORDER OPERATIONS                     │
+                │                    ORDER OPERATIONS                    │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Place BUY Order for Client                         │
                 │  2  Place SELL Order for Client                        │
@@ -644,7 +714,7 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │             ASSIGNED CLIENTS MANAGEMENT                │
+                │              ASSIGNED CLIENTS MANAGEMENT               │
                 ├────────────────────────────────────────────────────────┤
                 │  1  View My Assigned Clients                           │
                 │  2  View Client Portfolio                              │
@@ -703,7 +773,7 @@ public final class TestApplication {
 
         try {
             OrderPlacementResult result = traderService.placeOrder(trader.getUserId(), order);
-            printResult(result);
+            printResult(result, order);
         } catch (Exception e) {
             System.out.println("  [FAIL] " + e.getMessage());
         }
@@ -716,7 +786,16 @@ public final class TestApplication {
             System.out.println("  No clients currently assigned.");
             return;
         }
-        System.out.println("  Client User IDs: " + clients);
+        System.out.printf("  %-12s %-20s %-30s%n", "ClientID", "Username", "Email");
+        for (Long clientId : clients) {
+            Optional<User> uOpt = adminService.viewAllClients().stream().filter(u -> u.getUserId() == clientId).findFirst();
+            if (uOpt.isPresent()) {
+                User u = uOpt.get();
+                System.out.printf("  %-12d %-20s %-30s%n", u.getUserId(), u.getUsername(), u.getEmail());
+            } else {
+                System.out.printf("  %-12d %-20s %-30s%n", clientId, "N/A", "N/A");
+            }
+        }
     }
 
     private static void traderViewClientHoldings(Scanner sc, User trader) {
@@ -769,7 +848,7 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                   CLIENT MAIN MENU                     │
+                │                    CLIENT MAIN MENU                    │
                 ├────────────────────────────────────────────────────────┤
                 │  1  Portfolio & Wallet                                 │
                 │  2  Orders & Activity                                  │
@@ -793,7 +872,7 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                  PORTFOLIO & WALLET                    │
+                │                   PORTFOLIO & WALLET                   │
                 ├────────────────────────────────────────────────────────┤
                 │  1  View My Portfolio (Holdings)                       │
                 │  2  View My Wallet Balance                             │
@@ -819,12 +898,13 @@ public final class TestApplication {
             System.out.println("""
                 
                 ┌────────────────────────────────────────────────────────┐
-                │                  ORDERS & ACTIVITY                     │
+                │                   ORDERS & ACTIVITY                    │
                 ├────────────────────────────────────────────────────────┤
                 │  1  View My Orders                                     │
                 │  2  View My Trades                                      │
                 │  3  View My Profile                                    │
                 │  4  List Active Instruments                            │
+                │  5  View My Messages / Notifications                   │
                 │  0  Back to Main Menu                                  │
                 └────────────────────────────────────────────────────────┘
                 Choice: """);
@@ -835,9 +915,23 @@ public final class TestApplication {
                 case "2" -> printTradesList(client.getUserId(), clientService.getTrades(client.getUserId()));
                 case "3" -> clientViewProfile(client);
                 case "4" -> listInstruments();
+                case "5" -> clientViewNotifications(client);
                 case "0" -> inMenu = false;
                 default  -> System.out.println("  Invalid choice.");
             }
+        }
+    }
+
+    private static void clientViewNotifications(User client) {
+        System.out.println("\n-- My Messages / Notifications (Client " + client.getUserId() + ") --");
+        List<ClientNotification> list = clientService.getNotifications(client.getUserId());
+        if (list.isEmpty()) {
+            System.out.println("  No notification messages found.");
+            return;
+        }
+        System.out.printf("  %-8s %-22s %-60s%n", "ID", "Timestamp", "Message");
+        for (ClientNotification n : list) {
+            System.out.printf("  %-8d %-22s %-60s%n", n.getNotificationId(), n.getCreatedAt(), n.getMessage());
         }
     }
 
@@ -895,7 +989,6 @@ public final class TestApplication {
         System.out.printf("  Total Bal.  : %s%n", wallet.getCashBalance());
         System.out.printf("  Reserved    : %s%n", wallet.getReservedBalance());
         System.out.printf("  Available   : %s%n", wallet.getAvailableBalance());
-        System.out.printf("  Version     : %d%n", wallet.getVersion());
     }
 
     private static void printOrdersList(long clientId, List<Order> orders) {
@@ -916,9 +1009,11 @@ public final class TestApplication {
             System.out.println("  No trades found for client " + clientId);
             return;
         }
-        System.out.printf("  %-10s %-12s %-14s %-10s %-22s%n", "TradeId", "InstrumentId", "Price", "Qty", "ExecutedAt");
+        System.out.printf("  %-10s %-12s %-20s %-14s %-10s %-22s%n", "TradeId", "Symbol", "Trader Name", "Price", "Qty", "ExecutedAt");
         for (Trade t : trades) {
-            System.out.printf("  %-10d %-12d %-14s %-10d %-22s%n", t.getTradeId(), t.getInstrumentId(), t.getPrice(), t.getQuantity(), t.getExecutedAt());
+            String symbol = t.getSymbol() != null ? t.getSymbol() : String.valueOf(t.getInstrumentId());
+            String traderName = t.getTraderName() != null ? t.getTraderName() : "N/A";
+            System.out.printf("  %-10d %-12s %-20s %-14s %-10d %-22s%n", t.getTradeId(), symbol, traderName, t.getPrice(), t.getQuantity(), t.getExecutedAt());
         }
     }
 
@@ -1021,34 +1116,111 @@ public final class TestApplication {
         }
     }
 
-    private static String promptSymbol(Scanner sc) {
-        System.out.print("  Symbol (e.g. AAPL, MSFT, TSLA, GOOGL): ");
-        String s = sc.nextLine().trim().toUpperCase();
-        if (cache.getInstrument(s) == null) {
-            System.out.println("  Unknown symbol: " + s);
-            return null;
+    // ================================================================== //
+    //  STEP-BY-STEP INTERACTIVE VALIDATION HELPERS                      //
+    // ================================================================== //
+
+    private static String promptNonEmptyString(Scanner sc, String label) {
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim();
+            if (!input.isEmpty()) {
+                return input;
+            }
+            System.out.println("  [!] Value cannot be blank. Please re-enter.");
         }
-        return s;
+    }
+
+    private static String promptEmail(Scanner sc, String label) {
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim();
+            if (input.contains("@") && input.contains(".") && input.length() >= 5) {
+                return input;
+            }
+            System.out.println("  [!] Invalid email address format (e.g., user@domain.com). Please re-enter.");
+        }
+    }
+
+    private static String promptAadhaarLast4(Scanner sc, String label) {
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim();
+            if (input.matches("\\d{4}")) {
+                return input;
+            }
+            System.out.println("  [!] Invalid Aadhaar format. Must be exactly 4 numeric digits. Please re-enter.");
+        }
+    }
+
+    private static long promptPositiveLong(Scanner sc, String label) {
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim();
+            try {
+                long val = Long.parseLong(input);
+                if (val > 0) return val;
+                System.out.println("  [!] Number must be greater than 0. Please re-enter.");
+            } catch (NumberFormatException e) {
+                System.out.println("  [!] Invalid number format. Please enter a positive integer.");
+            }
+        }
     }
 
     private static long promptLong(Scanner sc, String label) {
-        System.out.print("  " + label);
-        try {
-            return Long.parseLong(sc.nextLine().trim());
-        } catch (NumberFormatException ex) {
-            System.out.println("  Invalid number — defaulting to 0.");
-            return 0L;
+        return promptPositiveLong(sc, label);
+    }
+
+    private static BigDecimal promptPositiveDecimal(Scanner sc, String label) {
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim();
+            try {
+                BigDecimal val = new BigDecimal(input);
+                if (val.compareTo(BigDecimal.ZERO) > 0) return val;
+                System.out.println("  [!] Amount/Price must be greater than 0. Please re-enter.");
+            } catch (NumberFormatException e) {
+                System.out.println("  [!] Invalid decimal number. Please re-enter.");
+            }
+        }
+    }
+
+    private static BigDecimal promptNonNegativeDecimal(Scanner sc, String label) {
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim();
+            try {
+                BigDecimal val = new BigDecimal(input);
+                if (val.compareTo(BigDecimal.ZERO) >= 0) return val;
+                System.out.println("  [!] Amount cannot be negative. Please re-enter.");
+            } catch (NumberFormatException e) {
+                System.out.println("  [!] Invalid decimal number. Please re-enter.");
+            }
         }
     }
 
     private static BigDecimal promptDecimal(Scanner sc, String label) {
-        System.out.print("  " + label);
-        try {
-            return new BigDecimal(sc.nextLine().trim());
-        } catch (NumberFormatException ex) {
-            System.out.println("  Invalid number — defaulting to 0.");
-            return BigDecimal.ZERO;
+        return promptPositiveDecimal(sc, label);
+    }
+
+    private static String promptValidSymbol(Scanner sc) {
+        while (true) {
+            System.out.print("  Symbol (e.g. AAPL, MSFT, TSLA): ");
+            String symbol = sc.nextLine().trim().toUpperCase();
+            if (symbol.equals("0") || symbol.equalsIgnoreCase("CANCEL")) {
+                return null;
+            }
+            if (cache.getInstrument(symbol) != null) {
+                return symbol;
+            }
+            System.out.println("  [!] Instrument '" + symbol + "' is not registered or active.");
+            System.out.println("      Active Instruments: " + cache.getAllInstruments().stream().map(Instrument::getSymbol).toList());
+            System.out.println("      (Enter '0' to cancel)");
         }
+    }
+
+    private static String promptSymbol(Scanner sc) {
+        return promptValidSymbol(sc);
     }
 
     private static String prompt(Scanner sc, String label) {
@@ -1057,13 +1229,26 @@ public final class TestApplication {
     }
 
     private static String promptChoice(Scanner sc, String label, String... options) {
-        System.out.print("  " + label);
-        String input = sc.nextLine().trim().toUpperCase();
-        for (String opt : options) {
-            if (opt.equalsIgnoreCase(input)) return opt;
+        while (true) {
+            System.out.print("  " + label);
+            String input = sc.nextLine().trim().toUpperCase();
+            for (String opt : options) {
+                if (opt.equalsIgnoreCase(input)) return opt;
+            }
+            System.out.println("  [!] Unrecognised choice '" + input + "'. Allowed options: " + java.util.Arrays.toString(options));
         }
-        System.out.println("  Unrecognised — defaulting to " + options[0]);
-        return options[0];
+    }
+
+    private static int promptOptionalInt(Scanner sc, String label, int defaultVal) {
+        System.out.print("  " + label);
+        String line = sc.nextLine().trim();
+        if (line.isEmpty()) return defaultVal;
+        try {
+            int val = Integer.parseInt(line);
+            return val > 0 ? val : defaultVal;
+        } catch (NumberFormatException e) {
+            return defaultVal;
+        }
     }
 
     private static int resolveInstrumentId(String symbol) {
@@ -1072,10 +1257,40 @@ public final class TestApplication {
     }
 
     private static void printResult(OrderPlacementResult result) {
+        printResult(result, null);
+    }
+
+    private static void printResult(OrderPlacementResult result, Order order) {
         if (result.isSuccess()) {
-            System.out.println("  [OK]   orderId=" + result.getOrderId() + " — " + result.getMessage());
+            System.out.println("""
+                
+                ┌────────────────────────────────────────────────────────┐
+                │              ORDER PLACEMENT CONFIRMATION              │
+                ├────────────────────────────────────────────────────────┤""");
+            System.out.printf("  │  Status    : SUCCESS                                  │%n");
+            System.out.printf("  │  Order ID  : %-41d│%n", result.getOrderId());
+            if (order != null) {
+                System.out.printf("  │  Client ID : %-41d│%n", order.getClientId());
+                System.out.printf("  │  Symbol    : %-41s│%n", order.getSymbol());
+                System.out.printf("  │  Side/Type : %-41s│%n", order.getSide() + " " + order.getOrderType() + " (" + order.getTimeInForce() + ")");
+                System.out.printf("  │  Quantity  : %-41d│%n", order.getOriginalQty());
+                System.out.printf("  │  Price     : %-41s│%n", order.getPrice() != null ? order.getPrice().toString() : "MARKET");
+            }
+            System.out.printf("  │  Result    : %-41s│%n", result.getMessage());
+            System.out.println("  └────────────────────────────────────────────────────────┘");
+            if (order != null) {
+                System.out.println("\n  [NOTIFICATION SENT] Message sent to Client " + order.getClientId() + ":");
+                System.out.println("  \"Your order #" + result.getOrderId() + " for " + order.getOriginalQty() + " " + order.getSymbol() + " (" + order.getSide() + ") was placed successfully! Status: " + result.getMessage() + "\"");
+            }
         } else {
-            System.out.println("  [FAIL] " + result.getMessage());
+            System.out.println("""
+                
+                ┌────────────────────────────────────────────────────────┐
+                │                 ORDER PLACEMENT FAILED                 │
+                ├────────────────────────────────────────────────────────┤""");
+            System.out.printf("  │  Status    : FAILED                                   │%n");
+            System.out.printf("  │  Reason    : %-41s│%n", result.getMessage());
+            System.out.println("  └────────────────────────────────────────────────────────┘");
         }
     }
 }

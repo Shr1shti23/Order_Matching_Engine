@@ -10,6 +10,7 @@ C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\HoldingDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\HoldingTransactionDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\InstrumentDaoImpl.java
+C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\NotificationDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\OrderDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\OrderEventDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\TradeDaoImpl.java
@@ -19,6 +20,7 @@ C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\WalletDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\impl\WalletTransactionDaoImpl.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\InstrumentDao.java
+C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\NotificationDao.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\OrderDao.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\OrderEventDao.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\dao\TradeDao.java
@@ -34,6 +36,7 @@ C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\ActionType.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\AuditLog.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\Client.java
+C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\ClientNotification.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\Holding.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\HoldingTransaction.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\model\HoldingTxType.java

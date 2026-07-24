@@ -46,6 +46,8 @@ com\bank\trading\service\ExpiryService.class
 com\bank\trading\dao\impl\OrderDaoImpl.class
 com\bank\trading\service\TradingService.class
 com\bank\trading\dao\impl\TraderProfileDaoImpl.class
+com\bank\trading\dao\NotificationDao.class
+com\bank\trading\model\ClientNotification.class
 com\bank\trading\model\OrderEvent.class
 com\bank\trading\model\Side.class
 com\bank\trading\dao\ClientProfileDao.class
@@ -58,6 +60,7 @@ com\bank\trading\model\Trader.class
 com\bank\trading\model\TraderClientAssignment.class
 com\bank\trading\model\WalletTxType.class
 com\bank\trading\dao\AuditLogDao.class
+com\bank\trading\dao\impl\NotificationDaoImpl.class
 com\bank\trading\util\OrderPlacementResult.class
 com\bank\trading\dao\impl\HoldingTransactionDaoImpl.class
 com\bank\trading\AutomatedTests.class

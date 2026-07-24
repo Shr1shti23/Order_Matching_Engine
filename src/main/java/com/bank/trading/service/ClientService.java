@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.bank.trading.dao.NotificationDao;
+import com.bank.trading.dao.impl.NotificationDaoImpl;
+
 /**
  * Provides read-only self-service views for clients.
  */
@@ -26,13 +29,15 @@ public final class ClientService {
     private final TradeDao                tradeDao;
     private final WalletTransactionDao    walletTxDao;
     private final UserDao                 userDao;
+    private final NotificationDao         notificationDao;
 
     public ClientService(CacheManager cache) {
-        this.cache       = cache;
-        this.orderDao    = new OrderDaoImpl();
-        this.tradeDao    = new TradeDaoImpl();
-        this.walletTxDao = new WalletTransactionDaoImpl();
-        this.userDao     = new UserDaoImpl();
+        this.cache           = cache;
+        this.orderDao        = new OrderDaoImpl();
+        this.tradeDao        = new TradeDaoImpl();
+        this.walletTxDao     = new WalletTransactionDaoImpl();
+        this.userDao         = new UserDaoImpl();
+        this.notificationDao = new NotificationDaoImpl();
     }
 
     // ================================================================== //
@@ -87,5 +92,9 @@ public final class ClientService {
 
     public Collection<Instrument> getInstruments() {
         return cache.getAllInstruments();
+    }
+
+    public List<ClientNotification> getNotifications(long clientId) {
+        return notificationDao.findByClientId(clientId);
     }
 }

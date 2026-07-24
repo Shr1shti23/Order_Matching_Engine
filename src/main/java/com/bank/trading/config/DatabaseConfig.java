@@ -51,10 +51,30 @@ public class DatabaseConfig {
                 }
 
                 dataSource = new HikariDataSource(config);
+                applySchemaUpdates();
             } catch (Exception ex) {
                 throw new RuntimeException("Failed to initialize database connection pool", ex);
             }
         }
+    }
+
+    private static void applySchemaUpdates() {
+        try (Connection conn = dataSource.getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            try {
+                stmt.executeUpdate("ALTER TABLE traders ADD COLUMN aadhaar_last4 VARCHAR(4) NULL");
+            } catch (SQLException ignore) {}
+            try {
+                stmt.executeUpdate("ALTER TABLE clients ADD COLUMN aadhaar_last4 VARCHAR(4) NULL");
+            } catch (SQLException ignore) {}
+            try {
+                stmt.executeUpdate("CREATE TABLE IF NOT EXISTS client_notifications (" +
+                                   "notification_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, " +
+                                   "client_id BIGINT UNSIGNED NOT NULL, " +
+                                   "message TEXT NOT NULL, " +
+                                   "created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)) ENGINE = InnoDB");
+            } catch (SQLException ignore) {}
+        } catch (Exception ignore) {}
     }
 
     public static Connection getConnection() throws SQLException {

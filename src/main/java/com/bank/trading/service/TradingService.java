@@ -38,6 +38,9 @@ import java.util.List;
  * <p>This class contains zero business logic of its own — it delegates every
  * step to a specialist service.</p>
  */
+import com.bank.trading.dao.NotificationDao;
+import com.bank.trading.dao.impl.NotificationDaoImpl;
+
 public final class TradingService {
 
     private final CacheManager          cache;
@@ -48,9 +51,10 @@ public final class TradingService {
     private final OrderBookService      orderBookService;
     private final CancelOrderService    cancelOrderService;
 
-    private final OrderDao      orderDao;
-    private final OrderEventDao orderEventDao;
-    private final AuditLogDao   auditLogDao;
+    private final OrderDao        orderDao;
+    private final OrderEventDao   orderEventDao;
+    private final AuditLogDao     auditLogDao;
+    private final NotificationDao notificationDao;
 
     public TradingService(CacheManager cache,
                           RiskValidationService riskValidationService,
@@ -69,6 +73,7 @@ public final class TradingService {
         this.orderDao             = new OrderDaoImpl();
         this.orderEventDao        = new OrderEventDaoImpl();
         this.auditLogDao          = new AuditLogDaoImpl();
+        this.notificationDao      = new NotificationDaoImpl();
     }
 
     /**
@@ -207,6 +212,10 @@ public final class TradingService {
             fillSummary = matches.size() + " fill(s). Remaining: " + order.getRemainingQty() + 
                 (order.getStatus() == OrderStatus.CANCELLED ? " (Remainder cancelled)" : "");
         }
+
+        String notifMsg = "Order #" + orderId + " (" + order.getSide() + " " + order.getOriginalQty() + " " + order.getSymbol()
+                + " @ " + (order.getPrice() != null ? order.getPrice() : "MARKET") + ") placed successfully. Status: " + fillSummary;
+        notificationDao.sendNotification(order.getClientId(), notifMsg);
 
         return OrderPlacementResult.success(orderId, fillSummary);
     }

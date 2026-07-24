@@ -63,11 +63,30 @@ public class Trade {
         this.quantity = quantity;
     }
 
+    private String traderName;
+    private String symbol;
+
     public LocalDateTime getExecutedAt() {
         return executedAt;
     }
 
     public void setExecutedAt(LocalDateTime executedAt) {
         this.executedAt = executedAt;
+    }
+
+    public String getTraderName() {
+        return traderName;
+    }
+
+    public void setTraderName(String traderName) {
+        this.traderName = traderName;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
     }
 }

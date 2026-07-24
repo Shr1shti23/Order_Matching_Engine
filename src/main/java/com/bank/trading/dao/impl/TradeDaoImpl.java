@@ -75,16 +75,25 @@ public class TradeDaoImpl implements TradeDao {
     @Override
     public List<Trade> findByClientId(long clientId) {
         List<Trade> trades = new ArrayList<>();
-        String sql = "SELECT t.* FROM trades t " +
-                     "JOIN orders o ON (t.buy_order_id = o.order_id OR t.sell_order_id = o.order_id) " +
-                     "WHERE o.client_id = ? " +
+        String sql = "SELECT t.*, inst.symbol, u.username AS trader_name " +
+                     "FROM trades t " +
+                     "JOIN orders o ON (t.buy_order_id = o.order_id OR t.sell_order_id = o.order_id) AND o.client_id = ? " +
+                     "LEFT JOIN users u ON o.trader_id = u.user_id " +
+                     "LEFT JOIN instruments inst ON t.instrument_id = inst.instrument_id " +
                      "ORDER BY t.executed_at DESC";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, clientId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    trades.add(mapRow(rs));
+                    Trade trade = mapRow(rs);
+                    try {
+                        trade.setSymbol(rs.getString("symbol"));
+                    } catch (SQLException ignore) {}
+                    try {
+                        trade.setTraderName(rs.getString("trader_name"));
+                    } catch (SQLException ignore) {}
+                    trades.add(trade);
                 }
             }
         } catch (SQLException e) {

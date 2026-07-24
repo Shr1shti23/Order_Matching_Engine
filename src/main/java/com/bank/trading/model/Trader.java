@@ -7,6 +7,7 @@ public class Trader {
     private long userId;
     private String employeeCode;
     private String department;
+    private String aadhaarLast4;
 
     public long getUserId() {
         return userId;
@@ -30,5 +31,13 @@ public class Trader {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getAadhaarLast4() {
+        return aadhaarLast4;
+    }
+
+    public void setAadhaarLast4(String aadhaarLast4) {
+        this.aadhaarLast4 = aadhaarLast4;
     }
 }

@@ -31,6 +31,7 @@ public final class AdminService {
     private final TraderAssignmentDao     assignmentDao;
     private final InstrumentDao           instrumentDao;
     private final WalletDao               walletDao;
+    private final WalletTransactionDao    walletTxDao;
     private final HoldingDao              holdingDao;
     private final HoldingTransactionDao   holdingTxDao;
     private final OrderDao                orderDao;
@@ -45,6 +46,7 @@ public final class AdminService {
         this.assignmentDao    = new TraderAssignmentDaoImpl();
         this.instrumentDao    = new InstrumentDaoImpl();
         this.walletDao        = new WalletDaoImpl();
+        this.walletTxDao      = new WalletTransactionDaoImpl();
         this.holdingDao       = new HoldingDaoImpl();
         this.holdingTxDao     = new HoldingTransactionDaoImpl();
         this.orderDao         = new OrderDaoImpl();
@@ -57,7 +59,7 @@ public final class AdminService {
     // ================================================================== //
 
     public User createTrader(String username, String email, String password,
-                             String employeeCode, String department, long adminId) {
+                             String employeeCode, String department, String aadhaarLast4, long adminId) {
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -75,6 +77,7 @@ public final class AdminService {
                 trader.setUserId(user.getUserId());
                 trader.setEmployeeCode(employeeCode);
                 trader.setDepartment(department);
+                trader.setAadhaarLast4(aadhaarLast4);
                 traderProfileDao.save(trader, conn);
 
                 conn.commit();
@@ -86,6 +89,15 @@ public final class AdminService {
         } catch (SQLException e) {
             throw new RuntimeException("Database error creating trader", e);
         }
+    }
+
+    public User createTrader(String username, String email, String password,
+                             String employeeCode, String department, long adminId) {
+        return createTrader(username, email, password, employeeCode, department, null, adminId);
+    }
+
+    public Optional<Long> findTraderIdByNameAndAadhaar(String username, String aadhaarLast4) {
+        return traderProfileDao.findTraderIdByNameAndAadhaar(username, aadhaarLast4);
     }
 
     public void suspendTrader(long traderId, long adminId) {
@@ -108,10 +120,22 @@ public final class AdminService {
     //  CLIENT MANAGEMENT                                                  //
     // ================================================================== //
 
+    private String normalizeRiskProfile(String riskProfile) {
+        if (riskProfile == null) return "MEDIUM";
+        String upper = riskProfile.trim().toUpperCase();
+        return switch (upper) {
+            case "CONSERVATIVE" -> "LOW";
+            case "MODERATE" -> "MEDIUM";
+            case "AGGRESSIVE" -> "HIGH";
+            case "LOW", "MEDIUM", "HIGH" -> upper;
+            default -> "MEDIUM";
+        };
+    }
+
     public User createClient(String username, String email, String password,
                              String kycStatus, String riskProfile,
                              BigDecimal initialBalance, String currency,
-                             long adminId) {
+                             String aadhaarLast4, long adminId) {
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -128,7 +152,8 @@ public final class AdminService {
                 Client client = new Client();
                 client.setUserId(user.getUserId());
                 client.setKycStatus(kycStatus);
-                client.setRiskProfile(riskProfile);
+                client.setRiskProfile(normalizeRiskProfile(riskProfile));
+                client.setAadhaarLast4(aadhaarLast4);
                 clientProfileDao.save(client, conn);
 
                 Optional<Wallet> existing = walletDao.findByClientId(user.getUserId());
@@ -153,6 +178,17 @@ public final class AdminService {
         }
     }
 
+    public User createClient(String username, String email, String password,
+                             String kycStatus, String riskProfile,
+                             BigDecimal initialBalance, String currency,
+                             long adminId) {
+        return createClient(username, email, password, kycStatus, riskProfile, initialBalance, currency, null, adminId);
+    }
+
+    public Optional<Long> findClientIdByNameAndAadhaar(String username, String aadhaarLast4) {
+        return clientProfileDao.findClientIdByNameAndAadhaar(username, aadhaarLast4);
+    }
+
     public void updateClient(long clientId, String kycStatus, String riskProfile) {
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
@@ -160,7 +196,7 @@ public final class AdminService {
                 Client client = new Client();
                 client.setUserId(clientId);
                 client.setKycStatus(kycStatus);
-                client.setRiskProfile(riskProfile);
+                client.setRiskProfile(normalizeRiskProfile(riskProfile));
                 clientProfileDao.update(client, conn);
                 conn.commit();
             } catch (Exception e) {
@@ -169,6 +205,48 @@ public final class AdminService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Database error updating client", e);
+        }
+    }
+
+    public void depositClientWallet(long clientId, BigDecimal amount, String reference) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be greater than zero.");
+        }
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Optional<Wallet> optWallet = walletDao.findByClientId(clientId);
+                Wallet wallet;
+                if (optWallet.isPresent()) {
+                    wallet = optWallet.get();
+                } else {
+                    wallet = new Wallet();
+                    wallet.setClientId(clientId);
+                    wallet.setCashBalance(BigDecimal.ZERO);
+                    wallet.setReservedBalance(BigDecimal.ZERO);
+                    wallet.setCurrency("INR");
+                    walletDao.save(wallet, conn);
+                }
+
+                BigDecimal newBalance = wallet.getCashBalance().add(amount);
+                walletDao.updateBalance(wallet.getWalletId(), newBalance, wallet.getVersion(), conn);
+
+                WalletTransaction txn = new WalletTransaction();
+                txn.setWalletId(wallet.getWalletId());
+                txn.setTransactionType(WalletTxType.DEPOSIT);
+                txn.setAmount(amount);
+                txn.setBalanceAfter(newBalance);
+                txn.setReference(reference != null && !reference.isBlank() ? reference : "ADMIN_DEPOSIT");
+                walletTxDao.insert(txn, conn);
+
+                conn.commit();
+                cache.refreshWallets();
+            } catch (Exception e) {
+                conn.rollback();
+                throw new RuntimeException("Failed to deposit funds: " + e.getMessage(), e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error depositing funds", e);
         }
     }
 
