@@ -66,6 +66,7 @@ C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\MatchingEngine.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\ModifyOrderService.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\OrderBookService.java
+C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\PasswordService.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\RBACService.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\ReservationService.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\RiskValidationService.java
@@ -73,6 +74,7 @@ C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\TraderService.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\service\TradingService.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\TestApplication.java
+C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\util\ConsolePasswordReader.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\util\MatchResult.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\util\OrderPlacementResult.java
 C:\Users\zshri\DSA project 1\Bank-Trading-System-\src\main\java\com\bank\trading\util\ValidationResult.java

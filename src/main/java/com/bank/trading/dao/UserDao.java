@@ -11,6 +11,7 @@ public interface UserDao {
     Optional<User> findByUsername(String username);
     void save(User user, Connection conn) throws SQLException;
     void updateStatus(long userId, String status, Connection conn) throws SQLException;
+    void updatePassword(long userId, String newPasswordHash, boolean forcePasswordReset, Connection conn) throws SQLException;
     List<User> findByRoleId(int roleId);
     List<String> findPermissionsByRoleId(int roleId);
 }

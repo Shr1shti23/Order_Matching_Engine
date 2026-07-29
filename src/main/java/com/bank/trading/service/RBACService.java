@@ -49,35 +49,23 @@ public class RBACService {
             throw new IllegalArgumentException("Invalid username or password.");
         }
 
-        if (!verifyPassword(user, password)) {
+        if (!PasswordService.verify(user.getPasswordHash(), password)) {
             throw new IllegalArgumentException("Invalid username or password.");
         }
 
+        // Transparent rehashing: Upgrade hash if parameters changed or if legacy format
+        if (PasswordService.needsRehash(user.getPasswordHash())) {
+            try (java.sql.Connection conn = com.bank.trading.config.DatabaseConfig.getConnection()) {
+                String newHash = PasswordService.hash(password);
+                userDao.updatePassword(user.getUserId(), newHash, user.isForcePasswordReset(), conn);
+                user.setPasswordHash(newHash);
+                user.setPasswordAlgo("argon2id");
+            } catch (Exception ignore) {
+                // Log/ignore background rehash failure to not block login
+            }
+        }
+
         return user;
-    }
-
-    private boolean verifyPassword(User user, String enteredPassword) {
-        String dbHash = user.getPasswordHash();
-        String dbAlgo = user.getPasswordAlgo();
-
-        // Argon2id sysadmin mock credential
-        if ("argon2id".equalsIgnoreCase(dbAlgo) &&
-                "$argon2id$v=19$m=65536,t=3,p=4$REPLACE_SALT$REPLACE_HASH".equals(dbHash)) {
-            return "sysadmin".equals(enteredPassword);
-        }
-
-        // Empty hash: allow empty password or username match
-        if (dbHash == null || dbHash.isEmpty()) {
-            return enteredPassword.isEmpty() || enteredPassword.equalsIgnoreCase(user.getUsername());
-        }
-
-        // Plain password (for newly created accounts)
-        if ("plain".equalsIgnoreCase(dbAlgo)) {
-            return enteredPassword.equals(dbHash);
-        }
-
-        // Fallback
-        return enteredPassword.equals(dbHash);
     }
 
     /**

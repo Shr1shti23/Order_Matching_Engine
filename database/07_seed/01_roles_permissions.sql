@@ -1,4 +1,8 @@
-USE trading_platform;
+-- =====================================================================
+-- SEED DATA 01: ROLES & PERMISSIONS
+-- For execution instructions, see database/07_seed/00_SEED_DATA_INSTRUCTIONS.md
+-- =====================================================================
+USE order_matching_engine;
 
 -- =====================================================================
 -- ROLES

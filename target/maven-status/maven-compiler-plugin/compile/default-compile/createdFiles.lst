@@ -46,6 +46,7 @@ com\bank\trading\service\ExpiryService.class
 com\bank\trading\dao\impl\OrderDaoImpl.class
 com\bank\trading\service\TradingService.class
 com\bank\trading\dao\impl\TraderProfileDaoImpl.class
+com\bank\trading\service\PasswordService.class
 com\bank\trading\dao\NotificationDao.class
 com\bank\trading\model\ClientNotification.class
 com\bank\trading\model\OrderEvent.class
@@ -65,6 +66,7 @@ com\bank\trading\util\OrderPlacementResult.class
 com\bank\trading\dao\impl\HoldingTransactionDaoImpl.class
 com\bank\trading\AutomatedTests.class
 com\bank\trading\dao\impl\TradeDaoImpl.class
+com\bank\trading\util\ConsolePasswordReader.class
 com\bank\trading\dao\impl\OrderEventDaoImpl.class
 com\bank\trading\service\ModifyOrderService.class
 com\bank\trading\model\TimeInForce.class

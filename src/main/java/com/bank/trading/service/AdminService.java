@@ -66,11 +66,12 @@ public final class AdminService {
                 User user = new User();
                 user.setUsername(username);
                 user.setEmail(email);
-                user.setPasswordHash(password);
-                user.setPasswordAlgo("plain");
+                user.setPasswordHash(PasswordService.hash(password));
+                user.setPasswordAlgo("argon2id");
                 user.setRoleId(2);
                 user.setStatus("ACTIVE");
                 user.setCreatedBy(adminId);
+                user.setForcePasswordReset(false);
                 userDao.save(user, conn);
 
                 Trader trader = new Trader();
@@ -142,11 +143,12 @@ public final class AdminService {
                 User user = new User();
                 user.setUsername(username);
                 user.setEmail(email);
-                user.setPasswordHash(password);
-                user.setPasswordAlgo("plain");
+                user.setPasswordHash(PasswordService.hash(password));
+                user.setPasswordAlgo("argon2id");
                 user.setRoleId(3);
                 user.setStatus("ACTIVE");
                 user.setCreatedBy(adminId);
+                user.setForcePasswordReset(false);
                 userDao.save(user, conn);
 
                 Client client = new Client();
@@ -175,6 +177,15 @@ public final class AdminService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Database error creating client", e);
+        }
+    }
+
+    public void changeUserPassword(long userId, String newPlaintextPassword, boolean forcePasswordReset) {
+        String hashed = PasswordService.hash(newPlaintextPassword);
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            userDao.updatePassword(userId, hashed, forcePasswordReset, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update password for user " + userId, e);
         }
     }
 

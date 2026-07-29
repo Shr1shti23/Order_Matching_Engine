@@ -7,16 +7,17 @@ import com.bank.trading.engine.OrderNode;
 import com.bank.trading.engine.PriceLevel;
 import com.bank.trading.model.*;
 import com.bank.trading.service.*;
+import com.bank.trading.util.ConsolePasswordReader;
 import com.bank.trading.util.OrderPlacementResult;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 /**
- * Console Application for Bank Trading Platform with Role-Based Access Control (RBAC).
+ * Console Application for the Order Matching Engine with Role-Based Access Control (RBAC).
  *
- * <p>Supports interactive Login for Admin, Trader, and Client user roles,
- * routing each authenticated user to their role-specific dashboard.</p>
+ * <p>Supports interactive CLI authentication with secure password masking, OWASP Argon2id password
+ * verification, and hierarchical role-based dashboards for Administrators, Traders, and Clients.</p>
  */
 public final class TestApplication {
 
@@ -29,23 +30,15 @@ public final class TestApplication {
     private static CancelOrderService  cancelOrderService;
 
     public static void main(String[] args) {
-        System.out.println("=================================================");
-        System.out.println("     BANK TRADING PLATFORM  RBAC CONSOLE        ");
-        System.out.println("=================================================");
+        System.out.println("==========================================================================");
+        System.out.println("                         ORDER MATCHING ENGINE                            ");
+        System.out.println("==========================================================================");
 
-        // ------ Initialise DB connection pool ------
-        try {
-            DatabaseConfig.init();
-        } catch (Exception ex) {
-            System.err.println("[FATAL] Cannot initialise database: " + ex.getMessage());
-            System.exit(1);
-        }
+        DatabaseConfig.init();
 
-        // ------ Load all caches and rebuild order books ------
         cache = CacheManager.getInstance();
         cache.startup(50);
 
-        // ------ Wire services ------
         ReservationService    reservationService    = new ReservationService(cache);
         OrderBookService      orderBookService      = new OrderBookService(cache);
         MatchingEngine        matchingEngine        = new MatchingEngine();
@@ -113,7 +106,7 @@ public final class TestApplication {
             │                  USER AUTHENTICATION                   │
             └────────────────────────────────────────────────────────┘""");
         String username = promptNonEmptyString(scanner, "Username: ");
-        String password = promptNonEmptyString(scanner, "Password: ");
+        String password = ConsolePasswordReader.readPassword(scanner, "Password: ");
 
         try {
             User user = rbacService.authenticate(username, password);
@@ -123,6 +116,27 @@ public final class TestApplication {
                 case 3 -> "CLIENT";
                 default -> "USER";
             };
+
+            if (user.isForcePasswordReset()) {
+                System.out.println("""
+                    
+                    ┌────────────────────────────────────────────────────────┐
+                    │                PASSWORD RESET REQUIRED                 │
+                    ├────────────────────────────────────────────────────────┤
+                    │  Your account requires a password change before        │
+                    │  accessing the system.                                 │
+                    └────────────────────────────────────────────────────────┘""");
+
+                String newPass = ConsolePasswordReader.readConfirmedPassword(scanner, "Enter New Password: ", "Confirm New Password: ");
+                adminService.changeUserPassword(user.getUserId(), newPass, false);
+                user.setForcePasswordReset(false);
+                System.out.println("""
+                    
+                    ┌────────────────────────────────────────────────────────┐
+                    │              PASSWORD RESET SUCCESSFUL                 │
+                    └────────────────────────────────────────────────────────┘""");
+            }
+
             System.out.println("\n  [SUCCESS] Welcome, " + user.getUsername() + " (" + roleName + ")");
             return user;
         } catch (Exception e) {
@@ -332,7 +346,7 @@ public final class TestApplication {
         System.out.println("\n-- Create Trader --");
         String username = promptNonEmptyString(sc, "Username: ");
         String email    = promptEmail(sc, "Email: ");
-        String password = promptNonEmptyString(sc, "Password: ");
+        String password = ConsolePasswordReader.readConfirmedPassword(sc, "Password: ", "Confirm Password: ");
         String empCode  = promptNonEmptyString(sc, "Employee Code: ");
         String dept     = promptNonEmptyString(sc, "Department: ");
         String aadhaar  = promptAadhaarLast4(sc, "Aadhaar Card (Last 4 Digits): ");
@@ -403,7 +417,7 @@ public final class TestApplication {
         System.out.println("\n-- Create Client --");
         String username = promptNonEmptyString(sc, "Username: ");
         String email    = promptEmail(sc, "Email: ");
-        String password = promptNonEmptyString(sc, "Password: ");
+        String password = ConsolePasswordReader.readConfirmedPassword(sc, "Password: ", "Confirm Password: ");
         String kyc      = promptChoice(sc, "KYC Status [VERIFIED/PENDING/REJECTED]: ", "VERIFIED", "PENDING", "REJECTED");
         String riskInput = promptChoice(sc, "Risk Profile [LOW/MEDIUM/HIGH]: ", "MEDIUM", "LOW", "HIGH", "CONSERVATIVE", "MODERATE", "AGGRESSIVE");
         String risk = switch (riskInput.toUpperCase()) {

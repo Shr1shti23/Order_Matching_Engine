@@ -1,84 +1,379 @@
-USE trading_platform;
+USE order_matching_engine;
 
--- Disable FK checks so we can insert in order and set up historical states if needed
+-- =====================================================================
+-- HISTORICAL HOLDINGS, ORDERS, TRADES, TRANSACTIONS & PRICE HISTORY
+-- =====================================================================
+-- 16 completed trades across 8 instruments, executed in 3 batches:
+--   Batch A: 2026-07-01  (Trades  1– 5)
+--   Batch B: 2026-07-10  (Trades  6–10)
+--   Batch C: 2026-07-20  (Trades 11–15)
+--   Batch D: 2026-07-22  (Trade  16 — partial fill)
+--
+-- Instrument IDs: 1=AAPL 2=MSFT 3=TSLA 4=GOOGL 5=NVDA 6=AMZN 7=INFY 8=RELIANCE
+-- Wallet  IDs   : wallet_N = client_N  (auto-increment 1–25 in insert order)
+-- =====================================================================
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =====================================================================
--- INITIAL HOLDINGS SETUPS (pre-trade or post-trade snapshot)
+-- HOLDINGS — current (post-trade) positions
+-- Only clients holding non-zero quantities appear here.
 -- =====================================================================
--- Client 7 (Sanjay) holds 100 AAPL shares
 INSERT INTO holdings (client_id, instrument_id, quantity, avg_buy_price)
-VALUES (7, 1, 100, 175.5000);
-
--- Client 8 (Neha) holds 100 AAPL and 50 MSFT shares
-INSERT INTO holdings (client_id, instrument_id, quantity, avg_buy_price)
-VALUES 
-    (8, 1, 100, 170.0000),
-    (8, 2, 50, 420.2000);
-
--- Client 10 (Divya) holds 150 MSFT shares
-INSERT INTO holdings (client_id, instrument_id, quantity, avg_buy_price)
-VALUES (10, 2, 150, 410.0000);
-
--- =====================================================================
--- HISTORICAL ORDERS
--- =====================================================================
--- Trade 1: Sanjay buys 100 AAPL from Neha
-INSERT INTO orders (order_id, client_id, trader_id, instrument_id, side, order_type, price, original_qty, remaining_qty, status)
 VALUES
-    (1, 7, 2, 1, 'BUY', 'LIMIT', 175.5000, 100, 0, 'FILLED'),
-    (2, 8, 3, 1, 'SELL', 'LIMIT', 175.5000, 100, 0, 'FILLED');
-
--- Trade 2: Neha buys 50 MSFT from Divya
-INSERT INTO orders (order_id, client_id, trader_id, instrument_id, side, order_type, price, original_qty, remaining_qty, status)
-VALUES
-    (3, 8, 3, 2, 'BUY', 'LIMIT', 420.2000, 50, 0, 'FILLED'),
-    (4, 10, 5, 2, 'SELL', 'LIMIT', 420.2000, 50, 0, 'FILLED');
+-- client_01 (uid=27): bought AAPL in T1, NVDA in T11
+(27, 1, 100,  175.5000),
+(27, 5,  50,  486.0000),
+-- client_02 (uid=28): bought RELIANCE in T12
+(28, 8,  25, 2955.0000),
+-- client_03 (uid=29): bought MSFT in T2, TSLA in T13
+(29, 2,  50,  420.2000),
+(29, 3,  60,  181.5000),
+-- client_04 (uid=30): bought GOOGL in T14
+(30, 4, 200,  151.0000),
+-- client_05 (uid=31): bought TSLA in T3, INFY in T15
+(31, 3, 200,  180.0000),
+(31, 7,  15, 1855.0000),
+-- client_06 (uid=32): partial buy 120 AAPL in T16
+(32, 1, 120,  176.0000),
+-- client_07 (uid=33): bought GOOGL in T4
+(33, 4, 150,  150.7500),
+-- client_09 (uid=35): bought NVDA in T5
+(35, 5,  30,  485.3000),
+-- client_11 (uid=37): bought AMZN in T6
+(37, 6, 100,  175.2000),
+-- client_13 (uid=39): bought INFY in T7
+(39, 7,  10, 1850.0000),
+-- client_15 (uid=41): bought RELIANCE in T8
+(41, 8,   5, 2950.0000),
+-- client_17 (uid=43): bought AAPL in T9
+(43, 1,  80,  176.0000),
+-- client_19 (uid=45): bought MSFT in T10
+(45, 2,  40,  421.0000);
 
 -- =====================================================================
--- HISTORICAL TRADES
+-- ORDERS — 32 historical orders (30 fully filled + 1 partial + 1 fill)
 -- =====================================================================
-INSERT INTO trades (trade_id, instrument_id, buy_order_id, sell_order_id, price, quantity)
+INSERT INTO orders (order_id, client_id, trader_id, instrument_id, side, order_type,
+                    time_in_force, price, original_qty, remaining_qty, status,
+                    created_at, updated_at)
 VALUES
-    (1, 1, 1, 2, 175.5000, 100),
-    (2, 2, 3, 4, 420.2000, 50);
+-- ── BATCH A: 2026-07-01 ──────────────────────────────────────────────
+-- T1  AAPL  @175.50 × 100  c01 BUY / c02 SELL
+( 1, 27,  2, 1, 'BUY',  'LIMIT', 'GTC', 175.5000, 100,   0, 'FILLED', '2026-07-01 09:30:00', '2026-07-01 09:30:05'),
+( 2, 28,  3, 1, 'SELL', 'LIMIT', 'GTC', 175.5000, 100,   0, 'FILLED', '2026-07-01 09:28:00', '2026-07-01 09:30:05'),
+-- T2  MSFT  @420.20 × 50   c03 BUY / c04 SELL
+( 3, 29,  4, 2, 'BUY',  'LIMIT', 'DAY', 420.2000,  50,   0, 'FILLED', '2026-07-01 10:05:00', '2026-07-01 10:05:12'),
+( 4, 30,  5, 2, 'SELL', 'LIMIT', 'DAY', 420.2000,  50,   0, 'FILLED', '2026-07-01 09:59:00', '2026-07-01 10:05:12'),
+-- T3  TSLA  @180.00 × 200  c05 BUY / c06 SELL
+( 5, 31,  6, 3, 'BUY',  'LIMIT', 'GTC', 180.0000, 200,   0, 'FILLED', '2026-07-01 10:30:00', '2026-07-01 10:30:44'),
+( 6, 32,  7, 3, 'SELL', 'LIMIT', 'GTC', 180.0000, 200,   0, 'FILLED', '2026-07-01 10:22:00', '2026-07-01 10:30:44'),
+-- T4  GOOGL @150.75 × 150  c07 BUY / c08 SELL
+( 7, 33,  8, 4, 'BUY',  'LIMIT', 'DAY', 150.7500, 150,   0, 'FILLED', '2026-07-01 11:15:00', '2026-07-01 11:15:33'),
+( 8, 34,  9, 4, 'SELL', 'LIMIT', 'DAY', 150.7500, 150,   0, 'FILLED', '2026-07-01 11:10:00', '2026-07-01 11:15:33'),
+-- T5  NVDA  @485.30 × 30   c09 BUY / c10 SELL
+( 9, 35, 10, 5, 'BUY',  'LIMIT', 'GTC', 485.3000,  30,   0, 'FILLED', '2026-07-01 13:00:00', '2026-07-01 13:00:22'),
+(10, 36, 11, 5, 'SELL', 'LIMIT', 'GTC', 485.3000,  30,   0, 'FILLED', '2026-07-01 12:55:00', '2026-07-01 13:00:22'),
+-- ── BATCH B: 2026-07-10 ──────────────────────────────────────────────
+-- T6  AMZN  @175.20 × 100  c11 BUY / c12 SELL
+(11, 37, 12, 6, 'BUY',  'LIMIT', 'DAY', 175.2000, 100,   0, 'FILLED', '2026-07-10 09:45:00', '2026-07-10 09:45:18'),
+(12, 38, 13, 6, 'SELL', 'LIMIT', 'DAY', 175.2000, 100,   0, 'FILLED', '2026-07-10 09:40:00', '2026-07-10 09:45:18'),
+-- T7  INFY  @1850.00 × 10  c13 BUY / c14 SELL
+(13, 39, 14, 7, 'BUY',  'LIMIT', 'GTC', 1850.0000, 10,   0, 'FILLED', '2026-07-10 10:20:00', '2026-07-10 10:20:07'),
+(14, 40, 15, 7, 'SELL', 'LIMIT', 'GTC', 1850.0000, 10,   0, 'FILLED', '2026-07-10 10:15:00', '2026-07-10 10:20:07'),
+-- T8  RELIANCE @2950.00 × 5  c15 BUY / c16 SELL
+(15, 41, 16, 8, 'BUY',  'LIMIT', 'DAY', 2950.0000,  5,   0, 'FILLED', '2026-07-10 11:00:00', '2026-07-10 11:00:55'),
+(16, 42, 17, 8, 'SELL', 'LIMIT', 'DAY', 2950.0000,  5,   0, 'FILLED', '2026-07-10 10:58:00', '2026-07-10 11:00:55'),
+-- T9  AAPL  @176.00 × 80   c17 BUY / c18 SELL
+(17, 43, 18, 1, 'BUY',  'LIMIT', 'GTC', 176.0000,  80,   0, 'FILLED', '2026-07-10 13:30:00', '2026-07-10 13:30:41'),
+(18, 44, 19, 1, 'SELL', 'LIMIT', 'GTC', 176.0000,  80,   0, 'FILLED', '2026-07-10 13:25:00', '2026-07-10 13:30:41'),
+-- T10 MSFT  @421.00 × 40   c19 BUY / c20 SELL
+(19, 45, 20, 2, 'BUY',  'LIMIT', 'DAY', 421.0000,  40,   0, 'FILLED', '2026-07-10 14:15:00', '2026-07-10 14:15:29'),
+(20, 46, 21, 2, 'SELL', 'LIMIT', 'DAY', 421.0000,  40,   0, 'FILLED', '2026-07-10 14:10:00', '2026-07-10 14:15:29'),
+-- ── BATCH C: 2026-07-20 ──────────────────────────────────────────────
+-- T11 NVDA  @486.00 × 50   c01 BUY / c21 SELL
+(21, 27,  2, 5, 'BUY',  'LIMIT', 'GTC', 486.0000,  50,   0, 'FILLED', '2026-07-20 09:30:00', '2026-07-20 09:30:15'),
+(22, 47, 22, 5, 'SELL', 'LIMIT', 'GTC', 486.0000,  50,   0, 'FILLED', '2026-07-20 09:25:00', '2026-07-20 09:30:15'),
+-- T12 RELIANCE @2955.00 × 25  c02 BUY / c22 SELL
+(23, 28,  3, 8, 'BUY',  'LIMIT', 'DAY', 2955.0000, 25,   0, 'FILLED', '2026-07-20 10:45:00', '2026-07-20 10:45:38'),
+(24, 48, 23, 8, 'SELL', 'LIMIT', 'DAY', 2955.0000, 25,   0, 'FILLED', '2026-07-20 10:40:00', '2026-07-20 10:45:38'),
+-- T13 TSLA  @181.50 × 60   c03 BUY / c23 SELL
+(25, 29,  4, 3, 'BUY',  'LIMIT', 'GTC', 181.5000,  60,   0, 'FILLED', '2026-07-20 11:30:00', '2026-07-20 11:30:22'),
+(26, 49, 24, 3, 'SELL', 'LIMIT', 'GTC', 181.5000,  60,   0, 'FILLED', '2026-07-20 11:25:00', '2026-07-20 11:30:22'),
+-- T14 GOOGL @151.00 × 200  c04 BUY / c24 SELL
+(27, 30,  5, 4, 'BUY',  'LIMIT', 'DAY', 151.0000, 200,   0, 'FILLED', '2026-07-20 13:00:00', '2026-07-20 13:00:48'),
+(28, 50, 25, 4, 'SELL', 'LIMIT', 'DAY', 151.0000, 200,   0, 'FILLED', '2026-07-20 12:55:00', '2026-07-20 13:00:48'),
+-- T15 INFY  @1855.00 × 15  c05 BUY / c02 SELL
+(29, 31,  6, 7, 'BUY',  'LIMIT', 'GTC', 1855.0000, 15,   0, 'FILLED', '2026-07-20 14:30:00', '2026-07-20 14:30:11'),
+(30, 28,  3, 7, 'SELL', 'LIMIT', 'GTC', 1855.0000, 15,   0, 'FILLED', '2026-07-20 14:25:00', '2026-07-20 14:30:11'),
+-- ── BATCH D: 2026-07-22 — Partial Fill ───────────────────────────────
+-- T16 AAPL @176.00: c06 wanted 200, only 120 filled (c20 SELL 120)
+(31, 32,  7, 1, 'BUY',  'LIMIT', 'DAY', 176.0000, 200,  80, 'PARTIALLY_FILLED', '2026-07-22 10:00:00', '2026-07-22 10:15:33'),
+(32, 46, 21, 1, 'SELL', 'LIMIT', 'DAY', 176.0000, 120,   0, 'FILLED',           '2026-07-22 09:55:00', '2026-07-22 10:15:33');
+
+-- =====================================================================
+-- TRADES — 16 matched executions
+-- Inserting trades fires trg_trades_after_insert which:
+--   (a) updates instruments.last_traded_price
+--   (b) appends a TRADE_EXECUTED row to audit_log
+-- =====================================================================
+INSERT INTO trades (trade_id, instrument_id, buy_order_id, sell_order_id, price, quantity, executed_at)
+VALUES
+( 1, 1,  1,  2, 175.5000,  100, '2026-07-01 09:30:05'),  -- AAPL
+( 2, 2,  3,  4, 420.2000,   50, '2026-07-01 10:05:12'),  -- MSFT
+( 3, 3,  5,  6, 180.0000,  200, '2026-07-01 10:30:44'),  -- TSLA
+( 4, 4,  7,  8, 150.7500,  150, '2026-07-01 11:15:33'),  -- GOOGL
+( 5, 5,  9, 10, 485.3000,   30, '2026-07-01 13:00:22'),  -- NVDA
+( 6, 6, 11, 12, 175.2000,  100, '2026-07-10 09:45:18'),  -- AMZN
+( 7, 7, 13, 14, 1850.0000,  10, '2026-07-10 10:20:07'),  -- INFY
+( 8, 8, 15, 16, 2950.0000,   5, '2026-07-10 11:00:55'),  -- RELIANCE
+( 9, 1, 17, 18, 176.0000,   80, '2026-07-10 13:30:41'),  -- AAPL
+(10, 2, 19, 20, 421.0000,   40, '2026-07-10 14:15:29'),  -- MSFT
+(11, 5, 21, 22, 486.0000,   50, '2026-07-20 09:30:15'),  -- NVDA
+(12, 8, 23, 24, 2955.0000,  25, '2026-07-20 10:45:38'),  -- RELIANCE
+(13, 3, 25, 26, 181.5000,   60, '2026-07-20 11:30:22'),  -- TSLA
+(14, 4, 27, 28, 151.0000,  200, '2026-07-20 13:00:48'),  -- GOOGL
+(15, 7, 29, 30, 1855.0000,  15, '2026-07-20 14:30:11'),  -- INFY
+(16, 1, 31, 32, 176.0000,  120, '2026-07-22 10:15:33');  -- AAPL (partial fill)
+
+-- =====================================================================
+-- ORDER EVENTS — lifecycle records for each order
+-- The CREATED / ORDER_PLACED entries are already auto-logged to
+-- audit_log by trg_orders_audit_insert. Here we record the terminal
+-- state transition for each historical order.
+-- =====================================================================
+INSERT INTO order_events (order_id, event_type, previous_status, new_status,
+                          quantity_changed, price, actor_user_id, created_at)
+VALUES
+-- T1 orders (AAPL, 2026-07-01 09:30:05)
+( 1, 'FILLED', 'PENDING', 'FILLED', 100, 175.5000, NULL, '2026-07-01 09:30:05'),
+( 2, 'FILLED', 'PENDING', 'FILLED', 100, 175.5000, NULL, '2026-07-01 09:30:05'),
+-- T2 orders (MSFT, 2026-07-01 10:05:12)
+( 3, 'FILLED', 'PENDING', 'FILLED',  50, 420.2000, NULL, '2026-07-01 10:05:12'),
+( 4, 'FILLED', 'PENDING', 'FILLED',  50, 420.2000, NULL, '2026-07-01 10:05:12'),
+-- T3 orders (TSLA, 2026-07-01 10:30:44)
+( 5, 'FILLED', 'PENDING', 'FILLED', 200, 180.0000, NULL, '2026-07-01 10:30:44'),
+( 6, 'FILLED', 'PENDING', 'FILLED', 200, 180.0000, NULL, '2026-07-01 10:30:44'),
+-- T4 orders (GOOGL, 2026-07-01 11:15:33)
+( 7, 'FILLED', 'PENDING', 'FILLED', 150, 150.7500, NULL, '2026-07-01 11:15:33'),
+( 8, 'FILLED', 'PENDING', 'FILLED', 150, 150.7500, NULL, '2026-07-01 11:15:33'),
+-- T5 orders (NVDA, 2026-07-01 13:00:22)
+( 9, 'FILLED', 'PENDING', 'FILLED',  30, 485.3000, NULL, '2026-07-01 13:00:22'),
+(10, 'FILLED', 'PENDING', 'FILLED',  30, 485.3000, NULL, '2026-07-01 13:00:22'),
+-- T6 orders (AMZN, 2026-07-10 09:45:18)
+(11, 'FILLED', 'PENDING', 'FILLED', 100, 175.2000, NULL, '2026-07-10 09:45:18'),
+(12, 'FILLED', 'PENDING', 'FILLED', 100, 175.2000, NULL, '2026-07-10 09:45:18'),
+-- T7 orders (INFY, 2026-07-10 10:20:07)
+(13, 'FILLED', 'PENDING', 'FILLED',  10, 1850.0000, NULL, '2026-07-10 10:20:07'),
+(14, 'FILLED', 'PENDING', 'FILLED',  10, 1850.0000, NULL, '2026-07-10 10:20:07'),
+-- T8 orders (RELIANCE, 2026-07-10 11:00:55)
+(15, 'FILLED', 'PENDING', 'FILLED',   5, 2950.0000, NULL, '2026-07-10 11:00:55'),
+(16, 'FILLED', 'PENDING', 'FILLED',   5, 2950.0000, NULL, '2026-07-10 11:00:55'),
+-- T9 orders (AAPL, 2026-07-10 13:30:41)
+(17, 'FILLED', 'PENDING', 'FILLED',  80, 176.0000, NULL, '2026-07-10 13:30:41'),
+(18, 'FILLED', 'PENDING', 'FILLED',  80, 176.0000, NULL, '2026-07-10 13:30:41'),
+-- T10 orders (MSFT, 2026-07-10 14:15:29)
+(19, 'FILLED', 'PENDING', 'FILLED',  40, 421.0000, NULL, '2026-07-10 14:15:29'),
+(20, 'FILLED', 'PENDING', 'FILLED',  40, 421.0000, NULL, '2026-07-10 14:15:29'),
+-- T11 orders (NVDA, 2026-07-20 09:30:15)
+(21, 'FILLED', 'PENDING', 'FILLED',  50, 486.0000, NULL, '2026-07-20 09:30:15'),
+(22, 'FILLED', 'PENDING', 'FILLED',  50, 486.0000, NULL, '2026-07-20 09:30:15'),
+-- T12 orders (RELIANCE, 2026-07-20 10:45:38)
+(23, 'FILLED', 'PENDING', 'FILLED',  25, 2955.0000, NULL, '2026-07-20 10:45:38'),
+(24, 'FILLED', 'PENDING', 'FILLED',  25, 2955.0000, NULL, '2026-07-20 10:45:38'),
+-- T13 orders (TSLA, 2026-07-20 11:30:22)
+(25, 'FILLED', 'PENDING', 'FILLED',  60, 181.5000, NULL, '2026-07-20 11:30:22'),
+(26, 'FILLED', 'PENDING', 'FILLED',  60, 181.5000, NULL, '2026-07-20 11:30:22'),
+-- T14 orders (GOOGL, 2026-07-20 13:00:48)
+(27, 'FILLED', 'PENDING', 'FILLED', 200, 151.0000, NULL, '2026-07-20 13:00:48'),
+(28, 'FILLED', 'PENDING', 'FILLED', 200, 151.0000, NULL, '2026-07-20 13:00:48'),
+-- T15 orders (INFY, 2026-07-20 14:30:11)
+(29, 'FILLED', 'PENDING', 'FILLED',  15, 1855.0000, NULL, '2026-07-20 14:30:11'),
+(30, 'FILLED', 'PENDING', 'FILLED',  15, 1855.0000, NULL, '2026-07-20 14:30:11'),
+-- T16 orders (AAPL partial fill, 2026-07-22 10:15:33)
+(31, 'PARTIALLY_FILLED', 'PENDING', 'PARTIALLY_FILLED', 120, 176.0000, NULL, '2026-07-22 10:15:33'),
+(32, 'FILLED',           'PENDING', 'FILLED',           120, 176.0000, NULL, '2026-07-22 10:15:33');
 
 -- =====================================================================
 -- WALLET TRANSACTIONS
+-- wallet_id N = client_N  (1=client_01 … 25=client_25)
 -- =====================================================================
--- Wallets start with adjusted balances from the trades
--- Sanjay (Client 7) paid: 100 * 175.50 = 17,550.00 INR
--- Neha (Client 8) received 17,550.00 INR (AAPL sell) and paid 50 * 420.20 = 21,010.00 INR (MSFT buy) -> Net: -3,460.00 INR
--- Divya (Client 10) received 21,010.00 INR
-
-INSERT INTO wallet_transactions (wallet_id, transaction_type, amount, balance_after, trade_id, reference)
+-- Initial deposits (one per wallet, before any trading)
+INSERT INTO wallet_transactions (wallet_id, transaction_type, amount, balance_after, trade_id, reference, created_at)
 VALUES
-    (1, 'TRADE_DEBIT', -17550.00, 482450.00, 1, 'Buy 100 AAPL'),
-    (2, 'TRADE_CREDIT', 17550.00, 767550.00, 1, 'Sell 100 AAPL'),
-    (2, 'TRADE_DEBIT', -21010.00, 746540.00, 2, 'Buy 50 MSFT'),
-    (4, 'TRADE_CREDIT', 21010.00, 1021010.00, 2, 'Sell 50 MSFT');
+( 1, 'DEPOSIT', 5000000.00, 5000000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 2, 'DEPOSIT', 4500000.00, 4500000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 3, 'DEPOSIT', 4000000.00, 4000000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 4, 'DEPOSIT', 3500000.00, 3500000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 5, 'DEPOSIT', 3000000.00, 3000000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 6, 'DEPOSIT', 3200000.00, 3200000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 7, 'DEPOSIT', 2800000.00, 2800000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 8, 'DEPOSIT', 2600000.00, 2600000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+( 9, 'DEPOSIT', 2400000.00, 2400000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(10, 'DEPOSIT', 3000000.00, 3000000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(11, 'DEPOSIT', 2000000.00, 2000000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(12, 'DEPOSIT', 1800000.00, 1800000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(13, 'DEPOSIT', 1600000.00, 1600000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(14, 'DEPOSIT', 1500000.00, 1500000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(15, 'DEPOSIT', 2200000.00, 2200000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(16, 'DEPOSIT', 1500000.00, 1500000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(17, 'DEPOSIT', 1400000.00, 1400000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(18, 'DEPOSIT', 1300000.00, 1300000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(19, 'DEPOSIT', 1200000.00, 1200000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(20, 'DEPOSIT', 1800000.00, 1800000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(21, 'DEPOSIT', 1000000.00, 1000000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(22, 'DEPOSIT',  900000.00,  900000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(23, 'DEPOSIT',  800000.00,  800000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(24, 'DEPOSIT',  750000.00,  750000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00'),
+(25, 'DEPOSIT',  500000.00,  500000.00, NULL, 'Initial account funding', '2026-06-15 10:00:00');
 
--- Adjust cash balances in wallets table to match final balances
-UPDATE wallets SET cash_balance = 482450.00 WHERE client_id = 7;
-UPDATE wallets SET cash_balance = 746540.00 WHERE client_id = 8;
-UPDATE wallets SET cash_balance = 1021010.00 WHERE client_id = 10;
+-- Trade-driven wallet movements
+-- Format: (wallet_id, type, amount, running_balance_after, trade_id, reference, timestamp)
+INSERT INTO wallet_transactions (wallet_id, transaction_type, amount, balance_after, trade_id, reference, created_at)
+VALUES
+-- T1: AAPL 100 @ 175.50 = 17,550.00
+( 1, 'TRADE_DEBIT',   -17550.00, 4982450.00,  1, 'BUY  100 AAPL @ 175.50',  '2026-07-01 09:30:05'),
+( 2, 'TRADE_CREDIT',   17550.00, 4517550.00,  1, 'SELL 100 AAPL @ 175.50',  '2026-07-01 09:30:05'),
+-- T2: MSFT 50 @ 420.20 = 21,010.00
+( 3, 'TRADE_DEBIT',   -21010.00, 3978990.00,  2, 'BUY   50 MSFT @ 420.20',  '2026-07-01 10:05:12'),
+( 4, 'TRADE_CREDIT',   21010.00, 3521010.00,  2, 'SELL  50 MSFT @ 420.20',  '2026-07-01 10:05:12'),
+-- T3: TSLA 200 @ 180.00 = 36,000.00
+( 5, 'TRADE_DEBIT',   -36000.00, 2964000.00,  3, 'BUY  200 TSLA @ 180.00',  '2026-07-01 10:30:44'),
+( 6, 'TRADE_CREDIT',   36000.00, 3236000.00,  3, 'SELL 200 TSLA @ 180.00',  '2026-07-01 10:30:44'),
+-- T4: GOOGL 150 @ 150.75 = 22,612.50
+( 7, 'TRADE_DEBIT',  -22612.50, 2777387.50,   4, 'BUY  150 GOOGL @ 150.75', '2026-07-01 11:15:33'),
+( 8, 'TRADE_CREDIT',  22612.50, 2622612.50,   4, 'SELL 150 GOOGL @ 150.75', '2026-07-01 11:15:33'),
+-- T5: NVDA 30 @ 485.30 = 14,559.00
+( 9, 'TRADE_DEBIT',  -14559.00, 2385441.00,   5, 'BUY   30 NVDA @ 485.30',  '2026-07-01 13:00:22'),
+(10, 'TRADE_CREDIT',  14559.00, 3014559.00,   5, 'SELL  30 NVDA @ 485.30',  '2026-07-01 13:00:22'),
+-- T6: AMZN 100 @ 175.20 = 17,520.00
+(11, 'TRADE_DEBIT',  -17520.00, 1982480.00,   6, 'BUY  100 AMZN @ 175.20',  '2026-07-10 09:45:18'),
+(12, 'TRADE_CREDIT',  17520.00, 1817520.00,   6, 'SELL 100 AMZN @ 175.20',  '2026-07-10 09:45:18'),
+-- T7: INFY 10 @ 1850.00 = 18,500.00
+(13, 'TRADE_DEBIT',  -18500.00, 1581500.00,   7, 'BUY   10 INFY @ 1850.00', '2026-07-10 10:20:07'),
+(14, 'TRADE_CREDIT',  18500.00, 1518500.00,   7, 'SELL  10 INFY @ 1850.00', '2026-07-10 10:20:07'),
+-- T8: RELIANCE 5 @ 2950.00 = 14,750.00
+(15, 'TRADE_DEBIT',  -14750.00, 2185250.00,   8, 'BUY    5 RLNC @ 2950.00', '2026-07-10 11:00:55'),
+(16, 'TRADE_CREDIT',  14750.00, 1514750.00,   8, 'SELL   5 RLNC @ 2950.00', '2026-07-10 11:00:55'),
+-- T9: AAPL 80 @ 176.00 = 14,080.00
+(17, 'TRADE_DEBIT',  -14080.00, 1385920.00,   9, 'BUY   80 AAPL @ 176.00',  '2026-07-10 13:30:41'),
+(18, 'TRADE_CREDIT',  14080.00, 1314080.00,   9, 'SELL  80 AAPL @ 176.00',  '2026-07-10 13:30:41'),
+-- T10: MSFT 40 @ 421.00 = 16,840.00
+(19, 'TRADE_DEBIT',  -16840.00, 1183160.00,  10, 'BUY   40 MSFT @ 421.00',  '2026-07-10 14:15:29'),
+(20, 'TRADE_CREDIT',  16840.00, 1816840.00,  10, 'SELL  40 MSFT @ 421.00',  '2026-07-10 14:15:29'),
+-- T11: NVDA 50 @ 486.00 = 24,300.00
+( 1, 'TRADE_DEBIT',  -24300.00, 4958150.00,  11, 'BUY   50 NVDA @ 486.00',  '2026-07-20 09:30:15'),
+(21, 'TRADE_CREDIT',  24300.00, 1024300.00,  11, 'SELL  50 NVDA @ 486.00',  '2026-07-20 09:30:15'),
+-- T12: RELIANCE 25 @ 2955.00 = 73,875.00
+( 2, 'TRADE_DEBIT',  -73875.00, 4443675.00,  12, 'BUY   25 RLNC @ 2955.00', '2026-07-20 10:45:38'),
+(22, 'TRADE_CREDIT',  73875.00,  973875.00,  12, 'SELL  25 RLNC @ 2955.00', '2026-07-20 10:45:38'),
+-- T13: TSLA 60 @ 181.50 = 10,890.00
+( 3, 'TRADE_DEBIT',  -10890.00, 3968100.00,  13, 'BUY   60 TSLA @ 181.50',  '2026-07-20 11:30:22'),
+(23, 'TRADE_CREDIT',  10890.00,  810890.00,  13, 'SELL  60 TSLA @ 181.50',  '2026-07-20 11:30:22'),
+-- T14: GOOGL 200 @ 151.00 = 30,200.00
+( 4, 'TRADE_DEBIT',  -30200.00, 3490810.00,  14, 'BUY  200 GOOGL @ 151.00', '2026-07-20 13:00:48'),
+(24, 'TRADE_CREDIT',  30200.00,  780200.00,  14, 'SELL 200 GOOGL @ 151.00', '2026-07-20 13:00:48'),
+-- T15: INFY 15 @ 1855.00 = 27,825.00
+( 5, 'TRADE_DEBIT',  -27825.00, 2936175.00,  15, 'BUY   15 INFY @ 1855.00', '2026-07-20 14:30:11'),
+( 2, 'TRADE_CREDIT',  27825.00, 4471500.00,  15, 'SELL  15 INFY @ 1855.00', '2026-07-20 14:30:11'),
+-- T16: AAPL 120 @ 176.00 = 21,120.00  (partial fill of order 31)
+( 6, 'TRADE_DEBIT',  -21120.00, 3214880.00,  16, 'BUY  120 AAPL @ 176.00 (partial)', '2026-07-22 10:15:33'),
+(20, 'TRADE_CREDIT',  21120.00, 1837960.00,  16, 'SELL 120 AAPL @ 176.00',           '2026-07-22 10:15:33');
 
 -- =====================================================================
 -- HOLDING TRANSACTIONS
+-- Pre-trade holdings (TRANSFER_IN) that enabled seller-side orders.
+-- Trade-driven buy/sell records follow.
 -- =====================================================================
-INSERT INTO holding_transactions (client_id, instrument_id, trade_id, transaction_type, quantity, price)
+INSERT INTO holding_transactions (client_id, instrument_id, trade_id, transaction_type, quantity, price, created_at)
 VALUES
-    (7, 1, 1, 'BUY', 100, 175.5000),
-    (8, 1, 1, 'SELL', -100, 175.5000),
-    (8, 2, 2, 'BUY', 50, 420.2000),
-    (10, 2, 2, 'SELL', -50, 420.2000);
+-- Pre-trade TRANSFER_IN (initial positions enabling sell orders)
+(28, 1, NULL, 'TRANSFER_IN',  100, 170.0000, '2026-06-20 09:00:00'),  -- c02: 100 AAPL
+(28, 7, NULL, 'TRANSFER_IN',   15, 1840.0000,'2026-06-20 09:05:00'),  -- c02:  15 INFY
+(30, 2, NULL, 'TRANSFER_IN',   50, 415.0000, '2026-06-20 09:10:00'),  -- c04:  50 MSFT
+(32, 3, NULL, 'TRANSFER_IN',  200, 175.0000, '2026-06-20 09:15:00'),  -- c06: 200 TSLA
+(34, 4, NULL, 'TRANSFER_IN',  150, 148.0000, '2026-06-20 09:20:00'),  -- c08: 150 GOOGL
+(36, 5, NULL, 'TRANSFER_IN',   30, 480.0000, '2026-06-20 09:25:00'),  -- c10:  30 NVDA
+(38, 6, NULL, 'TRANSFER_IN',  100, 172.0000, '2026-06-20 09:30:00'),  -- c12: 100 AMZN
+(40, 7, NULL, 'TRANSFER_IN',   10, 1845.0000,'2026-06-20 09:35:00'),  -- c14:  10 INFY
+(42, 8, NULL, 'TRANSFER_IN',    5, 2940.0000,'2026-06-20 09:40:00'),  -- c16:   5 RELIANCE
+(44, 1, NULL, 'TRANSFER_IN',   80, 172.0000, '2026-06-20 09:45:00'),  -- c18:  80 AAPL
+(46, 2, NULL, 'TRANSFER_IN',   40, 418.0000, '2026-06-20 09:50:00'),  -- c20:  40 MSFT
+(46, 1, NULL, 'TRANSFER_IN',  120, 173.0000, '2026-06-20 09:55:00'),  -- c20: 120 AAPL
+(47, 5, NULL, 'TRANSFER_IN',   50, 482.0000, '2026-06-20 10:00:00'),  -- c21:  50 NVDA
+(48, 8, NULL, 'TRANSFER_IN',   25, 2945.0000,'2026-06-20 10:05:00'),  -- c22:  25 RELIANCE
+(49, 3, NULL, 'TRANSFER_IN',   60, 177.0000, '2026-06-20 10:10:00'),  -- c23:  60 TSLA
+(50, 4, NULL, 'TRANSFER_IN',  200, 147.5000, '2026-06-20 10:15:00'),  -- c24: 200 GOOGL
+
+-- T1: 100 AAPL @ 175.50
+(27, 1,  1, 'BUY',    100, 175.5000, '2026-07-01 09:30:05'),
+(28, 1,  1, 'SELL',  -100, 175.5000, '2026-07-01 09:30:05'),
+-- T2: 50 MSFT @ 420.20
+(29, 2,  2, 'BUY',     50, 420.2000, '2026-07-01 10:05:12'),
+(30, 2,  2, 'SELL',   -50, 420.2000, '2026-07-01 10:05:12'),
+-- T3: 200 TSLA @ 180.00
+(31, 3,  3, 'BUY',    200, 180.0000, '2026-07-01 10:30:44'),
+(32, 3,  3, 'SELL',  -200, 180.0000, '2026-07-01 10:30:44'),
+-- T4: 150 GOOGL @ 150.75
+(33, 4,  4, 'BUY',    150, 150.7500, '2026-07-01 11:15:33'),
+(34, 4,  4, 'SELL',  -150, 150.7500, '2026-07-01 11:15:33'),
+-- T5: 30 NVDA @ 485.30
+(35, 5,  5, 'BUY',     30, 485.3000, '2026-07-01 13:00:22'),
+(36, 5,  5, 'SELL',   -30, 485.3000, '2026-07-01 13:00:22'),
+-- T6: 100 AMZN @ 175.20
+(37, 6,  6, 'BUY',    100, 175.2000, '2026-07-10 09:45:18'),
+(38, 6,  6, 'SELL',  -100, 175.2000, '2026-07-10 09:45:18'),
+-- T7: 10 INFY @ 1850.00
+(39, 7,  7, 'BUY',     10, 1850.0000,'2026-07-10 10:20:07'),
+(40, 7,  7, 'SELL',   -10, 1850.0000,'2026-07-10 10:20:07'),
+-- T8: 5 RELIANCE @ 2950.00
+(41, 8,  8, 'BUY',      5, 2950.0000,'2026-07-10 11:00:55'),
+(42, 8,  8, 'SELL',    -5, 2950.0000,'2026-07-10 11:00:55'),
+-- T9: 80 AAPL @ 176.00
+(43, 1,  9, 'BUY',     80, 176.0000, '2026-07-10 13:30:41'),
+(44, 1,  9, 'SELL',   -80, 176.0000, '2026-07-10 13:30:41'),
+-- T10: 40 MSFT @ 421.00
+(45, 2, 10, 'BUY',     40, 421.0000, '2026-07-10 14:15:29'),
+(46, 2, 10, 'SELL',   -40, 421.0000, '2026-07-10 14:15:29'),
+-- T11: 50 NVDA @ 486.00
+(27, 5, 11, 'BUY',     50, 486.0000, '2026-07-20 09:30:15'),
+(47, 5, 11, 'SELL',   -50, 486.0000, '2026-07-20 09:30:15'),
+-- T12: 25 RELIANCE @ 2955.00
+(28, 8, 12, 'BUY',     25, 2955.0000,'2026-07-20 10:45:38'),
+(48, 8, 12, 'SELL',   -25, 2955.0000,'2026-07-20 10:45:38'),
+-- T13: 60 TSLA @ 181.50
+(29, 3, 13, 'BUY',     60, 181.5000, '2026-07-20 11:30:22'),
+(49, 3, 13, 'SELL',   -60, 181.5000, '2026-07-20 11:30:22'),
+-- T14: 200 GOOGL @ 151.00
+(30, 4, 14, 'BUY',    200, 151.0000, '2026-07-20 13:00:48'),
+(50, 4, 14, 'SELL',  -200, 151.0000, '2026-07-20 13:00:48'),
+-- T15: 15 INFY @ 1855.00
+(31, 7, 15, 'BUY',     15, 1855.0000,'2026-07-20 14:30:11'),
+(28, 7, 15, 'SELL',   -15, 1855.0000,'2026-07-20 14:30:11'),
+-- T16: 120 AAPL @ 176.00 (partial fill)
+(32, 1, 16, 'BUY',    120, 176.0000, '2026-07-22 10:15:33'),
+(46, 1, 16, 'SELL',  -120, 176.0000, '2026-07-22 10:15:33');
 
 -- =====================================================================
--- PRICE HISTORY
+-- PRICE HISTORY — one record per executed trade
 -- =====================================================================
-INSERT INTO price_history (instrument_id, trade_price, traded_volume)
+INSERT INTO price_history (instrument_id, trade_price, traded_volume, trade_time)
 VALUES
-    (1, 175.5000, 100),
-    (2, 420.2000, 50);
+(1, 175.5000,  100, '2026-07-01 09:30:05'),   -- AAPL T1
+(2, 420.2000,   50, '2026-07-01 10:05:12'),   -- MSFT T2
+(3, 180.0000,  200, '2026-07-01 10:30:44'),   -- TSLA T3
+(4, 150.7500,  150, '2026-07-01 11:15:33'),   -- GOOGL T4
+(5, 485.3000,   30, '2026-07-01 13:00:22'),   -- NVDA T5
+(6, 175.2000,  100, '2026-07-10 09:45:18'),   -- AMZN T6
+(7, 1850.0000,  10, '2026-07-10 10:20:07'),   -- INFY T7
+(8, 2950.0000,   5, '2026-07-10 11:00:55'),   -- RELIANCE T8
+(1, 176.0000,   80, '2026-07-10 13:30:41'),   -- AAPL T9
+(2, 421.0000,   40, '2026-07-10 14:15:29'),   -- MSFT T10
+(5, 486.0000,   50, '2026-07-20 09:30:15'),   -- NVDA T11
+(8, 2955.0000,  25, '2026-07-20 10:45:38'),   -- RELIANCE T12
+(3, 181.5000,   60, '2026-07-20 11:30:22'),   -- TSLA T13
+(4, 151.0000,  200, '2026-07-20 13:00:48'),   -- GOOGL T14
+(7, 1855.0000,  15, '2026-07-20 14:30:11'),   -- INFY T15
+(1, 176.0000,  120, '2026-07-22 10:15:33');   -- AAPL T16 (partial)
 
 SET FOREIGN_KEY_CHECKS = 1;

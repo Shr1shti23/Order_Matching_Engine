@@ -12,6 +12,7 @@ public class User {
     private int roleId;
     private String status;
     private Long createdBy;
+    private boolean forcePasswordReset;
 
     public long getUserId() {
         return userId;
@@ -75,5 +76,13 @@ public class User {
 
     public void setCreatedBy(Long createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public boolean isForcePasswordReset() {
+        return forcePasswordReset;
+    }
+
+    public void setForcePasswordReset(boolean forcePasswordReset) {
+        this.forcePasswordReset = forcePasswordReset;
     }
 }

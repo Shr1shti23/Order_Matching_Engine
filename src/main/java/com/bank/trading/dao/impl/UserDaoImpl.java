@@ -32,7 +32,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public Optional<User> findByUsername(String username) {
-        String sql = "SELECT * FROM users WHERE username = ?";
+        String sql = "SELECT * FROM users WHERE LOWER(username) = LOWER(?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
@@ -47,13 +47,13 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public void save(User user, Connection conn) throws SQLException {
-        String sql = "INSERT INTO users (username, email, password_hash, password_algo, role_id, status, created_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, email, password_hash, password_algo, role_id, status, created_by, force_password_reset) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getEmail());
             stmt.setString(3, user.getPasswordHash());
-            stmt.setString(4, user.getPasswordAlgo());
+            stmt.setString(4, user.getPasswordAlgo() != null ? user.getPasswordAlgo() : "argon2id");
             stmt.setInt(5, user.getRoleId());
             stmt.setString(6, user.getStatus());
             if (user.getCreatedBy() != null) {
@@ -61,6 +61,7 @@ public class UserDaoImpl implements UserDao {
             } else {
                 stmt.setNull(7, java.sql.Types.BIGINT);
             }
+            stmt.setBoolean(8, user.isForcePasswordReset());
             stmt.executeUpdate();
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -76,6 +77,17 @@ public class UserDaoImpl implements UserDao {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, status);
             stmt.setLong(2, userId);
+            stmt.executeUpdate();
+        }
+    }
+
+    @Override
+    public void updatePassword(long userId, String newPasswordHash, boolean forcePasswordReset, Connection conn) throws SQLException {
+        String sql = "UPDATE users SET password_hash = ?, password_algo = 'argon2id', force_password_reset = ? WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newPasswordHash);
+            stmt.setBoolean(2, forcePasswordReset);
+            stmt.setLong(3, userId);
             stmt.executeUpdate();
         }
     }
@@ -125,6 +137,11 @@ public class UserDaoImpl implements UserDao {
         user.setStatus(rs.getString("status"));
         long createdBy = rs.getLong("created_by");
         if (!rs.wasNull()) user.setCreatedBy(createdBy);
+        try {
+            user.setForcePasswordReset(rs.getBoolean("force_password_reset"));
+        } catch (SQLException ignore) {
+            // column might not exist in older table versions before migration
+        }
         return user;
     }
 }

@@ -6,7 +6,7 @@
 -- Usage: mysql -u username -p < reset_database.sql
 -- =====================================================================
 
-USE trading_platform;
+USE order_matching_engine;
 
 SET FOREIGN_KEY_CHECKS = 0;
 

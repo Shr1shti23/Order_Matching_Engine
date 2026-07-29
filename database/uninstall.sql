@@ -5,6 +5,6 @@
 -- Usage: mysql -u username -p < uninstall.sql
 -- =====================================================================
 
-DROP DATABASE IF EXISTS trading_platform;
+DROP DATABASE IF EXISTS order_matching_engine;
 
-SELECT 'Database Uninstalled Successfully (trading_platform dropped).' AS status;
+SELECT 'Database Uninstalled Successfully (order_matching_engine dropped).' AS status;

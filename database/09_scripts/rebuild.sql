@@ -5,6 +5,6 @@
 -- Usage: mysql -u username -p < rebuild.sql
 -- =====================================================================
 
-DROP DATABASE IF EXISTS trading_platform;
+DROP DATABASE IF EXISTS order_matching_engine;
 
 SOURCE install.sql;

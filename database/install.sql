@@ -57,5 +57,6 @@ SOURCE 07_seed/03_instruments.sql;
 -- 6. Load Test Data
 SOURCE 08_test_data/01_traders_clients.sql;
 SOURCE 08_test_data/02_wallets_holdings_trades.sql;
+SOURCE 08_test_data/03_active_orders.sql;
 
 SELECT 'Installation Completed Successfully!' AS status;
